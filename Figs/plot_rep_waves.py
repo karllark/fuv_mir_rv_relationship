@@ -45,6 +45,10 @@ if __name__ == "__main__":
     exts_gor21 = [ExtData(cfile) for cfile in files_gor21]
     psym_gor21 = "m^"
 
+    files_dec22 = glob.glob("data/decleir22/*.fits")
+    exts_dec22 = [ExtData(cfile) for cfile in files_dec22]
+    psym_dec22 = "r>"
+
     # get R(V) values
     n_gor09 = len(files_gor09)
     rvs_gor09 = np.zeros((n_gor09, 2))
@@ -71,6 +75,15 @@ if __name__ == "__main__":
         rvs_gor21[i, 1] = irv[1]
         iext.trans_elv_alav()
 
+    # get R(V) values
+    n_dec22 = len(files_dec22)
+    rvs_dec22 = np.zeros((n_dec22, 2))
+    for i, iext in enumerate(exts_dec22):
+        irv = iext.columns["RV"]
+        rvs_dec22[i, 0] = irv[0]
+        rvs_dec22[i, 1] = irv[1]
+        iext.trans_elv_alav()
+
     if args.rv:
         labx = "$R(V)$"
         xrange = [2.0, 6.5]
@@ -78,6 +91,7 @@ if __name__ == "__main__":
         rvs_val04[:, 0] = 1 / rvs_val04[:, 0]
         rvs_gor09[:, 0] = 1 / rvs_gor09[:, 0]
         rvs_gor21[:, 0] = 1 / rvs_gor21[:, 0]
+        rvs_dec22[:, 0] = 1 / rvs_dec22[:, 0]
         labx = "$1/R(V)$"
         xrange = [1.0 / 6.5, 1.0 / 2.0]
 
@@ -102,8 +116,8 @@ if __name__ == "__main__":
         "IUE3": 0.3 * u.micron,
         "BAND1": 0.45 * u.micron,
         "BAND2": 2.1 * u.micron,
-        "IRS1": 6.0 * u.micron,
-        "IRS2": 10.0 * u.micron,
+        "SpeX_SXD1": 2.0 * u.micron,
+        "IRS1": 15.0 * u.micron,
     }
 
     for i, rname in enumerate(repwaves.keys()):
@@ -112,7 +126,12 @@ if __name__ == "__main__":
             ax[i].plot(
                 rvs_gor09[:, 0], oexts[:, 0], psym_gor09, fillstyle="none", label="G09"
             )
-        if "IRS" in rname:
+        elif "SpeX_SXD" in rname:
+            oexts = get_alav(exts_dec22, "SpeX_SXD", repwaves[rname])
+            ax[i].plot(
+                rvs_dec22[:, 0], oexts[:, 0], psym_dec22, fillstyle="none", label="D22"
+            )
+        elif "IRS" in rname:
             oexts = get_alav(exts_gor21, "IRS", repwaves[rname])
             ax[i].plot(
                 rvs_gor21[:, 0], oexts[:, 0], psym_gor21, fillstyle="none", label="G21"
@@ -125,7 +144,7 @@ if __name__ == "__main__":
                 psym_val04,
                 fillstyle="none",
                 alpha=0.5,
-                label="V09",
+                label="V04",
             )
             oexts = get_alav(exts_gor09, "IUE", repwaves[rname])
             ax[i].plot(
@@ -135,6 +154,10 @@ if __name__ == "__main__":
             ax[i].plot(
                 rvs_gor21[:, 0], oexts[:, 0], psym_gor21, fillstyle="none", label="G21"
             )
+            oexts = get_alav(exts_dec22, "IUE", repwaves[rname])
+            ax[i].plot(
+                rvs_dec22[:, 0], oexts[:, 0], psym_dec22, fillstyle="none", label="D22"
+            )
         elif "BAND" in rname:
             oexts = get_alav(exts_val04, "BAND", repwaves[rname])
             ax[i].plot(
@@ -143,7 +166,7 @@ if __name__ == "__main__":
                 psym_val04,
                 fillstyle="none",
                 alpha=0.5,
-                label="V09",
+                label="V04",
             )
             oexts = get_alav(exts_gor09, "BAND", repwaves[rname])
             ax[i].plot(
@@ -153,14 +176,33 @@ if __name__ == "__main__":
             ax[i].plot(
                 rvs_gor21[:, 0], oexts[:, 0], psym_gor21, fillstyle="none", label="G21"
             )
-        ax[i].legend(title=f"{repwaves[rname]}")
-
-    for i in range(3):
-        fax[1, i].set_xlabel(labx)
-    for i in range(2):
-        fax[i, 0].set_ylabel(r"$A(\lambda)/A(V)$")
+            oexts = get_alav(exts_dec22, "BAND", repwaves[rname])
+            ax[i].plot(
+                rvs_dec22[:, 0], oexts[:, 0], psym_dec22, fillstyle="none", label="D22"
+            )
+        ax[i].legend(title=f"{repwaves[rname]}", ncol=2)
 
     fax[0, 1].set_xlim(xrange)
+
+    # for 2nd x-axis with R(V) values
+    new_ticks = np.array(
+        [1.0 / 2.0, 1.0 / 3.0, 1.0 / 4.0, 1.0 / 5.0, 1.0 / 6.0]
+    )
+    new_ticks_labels = ["%.1f" % z for z in 1.0 / new_ticks]
+
+    for i in range(4):
+        fax[1, i].set_xlabel(labx)
+
+        if not args.rv:
+            # add 2nd x-axis with R(V) values
+            tax = fax[0, i].twiny()
+            tax.set_xlim(fax[0, i].get_xlim())
+            tax.set_xticks(new_ticks)
+            tax.set_xticklabels(new_ticks_labels)
+            tax.set_xlabel(r"$R(V)$")
+
+    for i in range(2):
+        fax[i, 0].set_ylabel(r"$A(\lambda)/A(V)$")
 
     fig.tight_layout()
 
