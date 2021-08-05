@@ -207,6 +207,8 @@ if __name__ == "__main__":
     fig.tight_layout()
 
     fname = "fuv_mir_rv_rep_waves"
+    if args.rv:
+        fname = f"{fname}_rv"
     if args.png:
         fig.savefig(f"{fname}.png")
     elif args.pdf:
