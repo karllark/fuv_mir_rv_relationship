@@ -7,7 +7,6 @@ if __name__ == "__main__":
 
     fpath = "data/gordon21/"
 
-    # files = ["bd+35d4258_hd097471_ext.fits"]
     files = glob.glob(f"{fpath}*.fits")
 
     for fname in files:

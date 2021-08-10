@@ -41,6 +41,10 @@ if __name__ == "__main__":
     exts_gor09 = [ExtData(cfile) for cfile in files_gor09]
     psym_gor09 = "bs"
 
+    files_fit19 = glob.glob("data/fit19*.fits")
+    exts_fit19 = [ExtData(cfile) for cfile in files_fit19]
+    psym_fit19 = "cv"
+
     files_gor21 = glob.glob("data/gor21*.fits")
     exts_gor21 = [ExtData(cfile) for cfile in files_gor21]
     psym_gor21 = "m^"
@@ -67,6 +71,15 @@ if __name__ == "__main__":
         iext.trans_elv_alav()
 
     # get R(V) values
+    n_fit19 = len(files_fit19)
+    rvs_fit19 = np.zeros((n_fit19, 2))
+    for i, iext in enumerate(exts_fit19):
+        irv = iext.columns["RV"]
+        rvs_fit19[i, 0] = irv[0]
+        rvs_fit19[i, 1] = irv[1]
+        iext.trans_elv_alav()
+
+    # get R(V) values
     n_gor21 = len(files_gor21)
     rvs_gor21 = np.zeros((n_gor21, 2))
     for i, iext in enumerate(exts_gor21):
@@ -90,6 +103,7 @@ if __name__ == "__main__":
     else:
         rvs_val04[:, 0] = 1 / rvs_val04[:, 0]
         rvs_gor09[:, 0] = 1 / rvs_gor09[:, 0]
+        rvs_fit19[:, 0] = 1 / rvs_fit19[:, 0]
         rvs_gor21[:, 0] = 1 / rvs_gor21[:, 0]
         rvs_dec22[:, 0] = 1 / rvs_dec22[:, 0]
         labx = "$1/R(V)$"
@@ -114,7 +128,8 @@ if __name__ == "__main__":
         "IUE1": 0.15 * u.micron,
         "IUE2": 0.2175 * u.micron,
         "IUE3": 0.3 * u.micron,
-        "BAND1": 0.45 * u.micron,
+        "STIS1": 0.45 * u.micron,
+        # "BAND1": 0.45 * u.micron,
         "BAND2": 2.1 * u.micron,
         "SpeX_SXD1": 2.0 * u.micron,
         "IRS1": 15.0 * u.micron,
@@ -125,6 +140,11 @@ if __name__ == "__main__":
             oexts = get_alav(exts_gor09, "FUSE", repwaves[rname])
             ax[i].plot(
                 rvs_gor09[:, 0], oexts[:, 0], psym_gor09, fillstyle="none", label="G09"
+            )
+        if "STIS" in rname:
+            oexts = get_alav(exts_fit19, "STIS", repwaves[rname])
+            ax[i].plot(
+                rvs_fit19[:, 0], oexts[:, 0], psym_fit19, fillstyle="none", label="F19"
             )
         elif "SpeX_SXD" in rname:
             oexts = get_alav(exts_dec22, "SpeX_SXD", repwaves[rname])
@@ -137,18 +157,22 @@ if __name__ == "__main__":
                 rvs_gor21[:, 0], oexts[:, 0], psym_gor21, fillstyle="none", label="G21"
             )
         elif "IUE" in rname:
-            oexts = get_alav(exts_val04, "IUE", repwaves[rname])
-            ax[i].plot(
-                rvs_val04[:, 0],
-                oexts[:, 0],
-                psym_val04,
-                fillstyle="none",
-                alpha=0.5,
-                label="V04",
-            )
+            # oexts = get_alav(exts_val04, "IUE", repwaves[rname])
+            # ax[i].plot(
+            #     rvs_val04[:, 0],
+            #     oexts[:, 0],
+            #     psym_val04,
+            #     fillstyle="none",
+            #     alpha=0.5,
+            #     label="V04",
+            # )
             oexts = get_alav(exts_gor09, "IUE", repwaves[rname])
             ax[i].plot(
                 rvs_gor09[:, 0], oexts[:, 0], psym_gor09, fillstyle="none", label="G09"
+            )
+            oexts = get_alav(exts_fit19, "STIS", repwaves[rname])
+            ax[i].plot(
+                rvs_fit19[:, 0], oexts[:, 0], psym_fit19, fillstyle="none", label="F19"
             )
             oexts = get_alav(exts_gor21, "IUE", repwaves[rname])
             ax[i].plot(
