@@ -1,7 +1,7 @@
 import glob
 import numpy as np
 from scipy.io import readsav
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 import astropy.units as u
 
 from measure_extinction.extdata import ExtData as ExtDataStock

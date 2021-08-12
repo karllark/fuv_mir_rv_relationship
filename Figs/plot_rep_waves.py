@@ -127,11 +127,13 @@ if __name__ == "__main__":
         "FUSE1": 0.1 * u.micron,
         "IUE1": 0.15 * u.micron,
         "IUE2": 0.2175 * u.micron,
-        "IUE3": 0.3 * u.micron,
+        # "IUE3": 0.3 * u.micron,
         "STIS1": 0.45 * u.micron,
+        "STIS2": 0.7 * u.micron,
         # "BAND1": 0.45 * u.micron,
-        "BAND2": 2.1 * u.micron,
-        "SpeX_SXD1": 2.0 * u.micron,
+        # "BAND2": 2.1 * u.micron,
+        "SpeX_SXD1": 1.5 * u.micron,
+        "SpeX_LXD1": 3.5 * u.micron,
         "IRS1": 15.0 * u.micron,
     }
 
@@ -148,6 +150,11 @@ if __name__ == "__main__":
             )
         elif "SpeX_SXD" in rname:
             oexts = get_alav(exts_dec22, "SpeX_SXD", repwaves[rname])
+            ax[i].plot(
+                rvs_dec22[:, 0], oexts[:, 0], psym_dec22, fillstyle="none", label="D22"
+            )
+        elif "SpeX_LXD" in rname:
+            oexts = get_alav(exts_dec22, "SpeX_LXD", repwaves[rname])
             ax[i].plot(
                 rvs_dec22[:, 0], oexts[:, 0], psym_dec22, fillstyle="none", label="D22"
             )
