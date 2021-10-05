@@ -30,7 +30,7 @@ Data
 Figures
 -------
 
-1.
+1. 1/R(V) relationship at representative wavelengths: python Figs/plot_rep_waves.py
 
 Tables
 ------

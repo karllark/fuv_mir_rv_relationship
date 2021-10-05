@@ -4,6 +4,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 import astropy.units as u
+from astropy.modeling import models, fitting
+from astropy.stats import sigma_clip
 
 from measure_extinction.extdata import ExtData
 
@@ -25,9 +27,20 @@ def get_alav(exts, src, wave):
     return oext
 
 
+def get_irvs(rvs):
+    """
+    Compute 1/rvs values (including uncs) from rvs vals
+    """
+    irvs = np.zeros(rvs.shape)
+    irvs[:, 0] = 1 / rvs[:, 0]
+    irvs[:, 1] = irvs[:, 0] * (rvs[:, 1] / rvs[:, 0])
+    return irvs
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--rv", help="plot versus R(V)", action="store_true")
+    # parser.add_argument("--elvebv", help="plot versus E(l-V)/E(B-V)", action="store_true")
     parser.add_argument("--png", help="save figure as a png file", action="store_true")
     parser.add_argument("--pdf", help="save figure as a pdf file", action="store_true")
     args = parser.parse_args()
@@ -101,13 +114,15 @@ if __name__ == "__main__":
         labx = "$R(V)$"
         xrange = [2.0, 6.5]
     else:
-        rvs_val04[:, 0] = 1 / rvs_val04[:, 0]
-        rvs_gor09[:, 0] = 1 / rvs_gor09[:, 0]
-        rvs_fit19[:, 0] = 1 / rvs_fit19[:, 0]
-        rvs_gor21[:, 0] = 1 / rvs_gor21[:, 0]
-        rvs_dec22[:, 0] = 1 / rvs_dec22[:, 0]
+        rvs_val04 = get_irvs(rvs_val04)
+        rvs_gor09 = get_irvs(rvs_gor09)
+        rvs_fit19 = get_irvs(rvs_fit19)
+        rvs_gor21 = get_irvs(rvs_gor21)
+        rvs_dec22 = get_irvs(rvs_dec22)
         labx = "$1/R(V)$"
         xrange = [1.0 / 6.5, 1.0 / 2.0]
+
+    laby = r"$A(\lambda)/A(V)$"
 
     fontsize = 12
 
@@ -138,54 +153,75 @@ if __name__ == "__main__":
     }
 
     for i, rname in enumerate(repwaves.keys()):
+        xvals = None
+        yvals = None
+        xvals_unc = None
+        yvals_unc = None
         if "FUSE" in rname:
             oexts = get_alav(exts_gor09, "FUSE", repwaves[rname])
-            ax[i].plot(
-                rvs_gor09[:, 0], oexts[:, 0], psym_gor09, fillstyle="none", label="G09"
+            xvals = rvs_gor09[:, 0]
+            xvals_unc = rvs_gor09[:, 1]
+            yvals = oexts[:, 0]
+            yvals_unc = oexts[:, 1]
+            ax[i].errorbar(
+                rvs_gor09[:, 0],
+                oexts[:, 0],
+                xerr=xvals_unc,
+                yerr=yvals_unc,
+                fmt=psym_gor09,
+                fillstyle="none",
+                label="G09",
             )
         if "STIS" in rname:
             oexts = get_alav(exts_fit19, "STIS", repwaves[rname])
+            xvals = rvs_fit19[:, 0]
+            yvals = oexts[:, 0]
             ax[i].plot(
                 rvs_fit19[:, 0], oexts[:, 0], psym_fit19, fillstyle="none", label="F19"
             )
         elif "SpeX_SXD" in rname:
             oexts = get_alav(exts_dec22, "SpeX_SXD", repwaves[rname])
+            xvals = rvs_dec22[:, 0]
+            yvals = oexts[:, 0]
             ax[i].plot(
                 rvs_dec22[:, 0], oexts[:, 0], psym_dec22, fillstyle="none", label="D22"
             )
         elif "SpeX_LXD" in rname:
             oexts = get_alav(exts_dec22, "SpeX_LXD", repwaves[rname])
+            xvals = rvs_dec22[:, 0]
+            yvals = oexts[:, 0]
             ax[i].plot(
                 rvs_dec22[:, 0], oexts[:, 0], psym_dec22, fillstyle="none", label="D22"
             )
         elif "IRS" in rname:
             oexts = get_alav(exts_gor21, "IRS", repwaves[rname])
+            xvals = rvs_gor21[:, 0]
+            yvals = oexts[:, 0]
             ax[i].plot(
                 rvs_gor21[:, 0], oexts[:, 0], psym_gor21, fillstyle="none", label="G21"
             )
         elif "IUE" in rname:
-            # oexts = get_alav(exts_val04, "IUE", repwaves[rname])
-            # ax[i].plot(
-            #     rvs_val04[:, 0],
-            #     oexts[:, 0],
-            #     psym_val04,
-            #     fillstyle="none",
-            #     alpha=0.5,
-            #     label="V04",
-            # )
             oexts = get_alav(exts_gor09, "IUE", repwaves[rname])
+            xvals = rvs_gor09[:, 0]
+            yvals = oexts[:, 0]
             ax[i].plot(
                 rvs_gor09[:, 0], oexts[:, 0], psym_gor09, fillstyle="none", label="G09"
             )
             oexts = get_alav(exts_fit19, "STIS", repwaves[rname])
+            xvals = np.append(xvals, rvs_fit19[:, 0])
+            yvals = np.append(yvals, oexts[:, 0])
             ax[i].plot(
                 rvs_fit19[:, 0], oexts[:, 0], psym_fit19, fillstyle="none", label="F19"
             )
             oexts = get_alav(exts_gor21, "IUE", repwaves[rname])
+            xvals = np.append(xvals, rvs_gor21[:, 0])
+            yvals = np.append(yvals, oexts[:, 0])
             ax[i].plot(
                 rvs_gor21[:, 0], oexts[:, 0], psym_gor21, fillstyle="none", label="G21"
             )
             oexts = get_alav(exts_dec22, "IUE", repwaves[rname])
+            xvals = np.append(xvals, rvs_dec22[:, 0])
+            yvals = np.append(yvals, oexts[:, 0])
             ax[i].plot(
                 rvs_dec22[:, 0], oexts[:, 0], psym_dec22, fillstyle="none", label="D22"
             )
@@ -213,12 +249,27 @@ if __name__ == "__main__":
             )
         ax[i].legend(title=f"{repwaves[rname]}", ncol=2)
 
+        # fit a line
+        if xvals is not None:
+            fit = fitting.LinearLSQFitter()
+            line_init = models.Linear1D()
+            gvals = np.isfinite(yvals)
+            fitted_line = fit(line_init, xvals[gvals], yvals[gvals])
+            ax[i].plot(xvals, fitted_line(xvals), "k-", label="Fit")
+
+            # or_fit = fitting.FittingWithOutlierRemoval(
+            #     fit, sigma_clip, niter=3, sigma=3.0
+            # )
+            # fitted_line_wclip, mask = or_fit(
+            #     line_init, xvals[gvals], yvals[gvals]
+            # )  # , weights=1.0/yunc)
+            # filtered_data = np.ma.masked_array(yvals[gvals], mask=mask)
+            # ax[i].plot(xvals, fitted_line_wclip(xvals), "k--", label="Fit w/ clipping")
+
     fax[0, 1].set_xlim(xrange)
 
     # for 2nd x-axis with R(V) values
-    new_ticks = np.array(
-        [1.0 / 2.0, 1.0 / 3.0, 1.0 / 4.0, 1.0 / 5.0, 1.0 / 6.0]
-    )
+    new_ticks = np.array([1.0 / 2.0, 1.0 / 3.0, 1.0 / 4.0, 1.0 / 5.0, 1.0 / 6.0])
     new_ticks_labels = ["%.1f" % z for z in 1.0 / new_ticks]
 
     for i in range(4):
@@ -233,7 +284,7 @@ if __name__ == "__main__":
             tax.set_xlabel(r"$R(V)$")
 
     for i in range(2):
-        fax[i, 0].set_ylabel(r"$A(\lambda)/A(V)$")
+        fax[i, 0].set_ylabel(laby)
 
     fig.tight_layout()
 
