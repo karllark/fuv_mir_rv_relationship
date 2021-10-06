@@ -5,36 +5,11 @@ import numpy as np
 
 import astropy.units as u
 from astropy.modeling import models, fitting
-from astropy.stats import sigma_clip
+# from astropy.stats import sigma_clip
 
 from measure_extinction.extdata import ExtData
 
-
-def get_alav(exts, src, wave):
-
-    n_exts = len(exts)
-    oext = np.full((n_exts, 2), np.nan)
-    for i, iext in enumerate(exts):
-        if src in iext.waves.keys():
-            sindxs = np.argsort(np.absolute(iext.waves[src] - wave))
-            if (iext.npts[src][sindxs[0]] > 0) and (iext.exts[src][sindxs[0]] > 0):
-                oext[i, 0] = iext.exts[src][sindxs[0]]
-                oext[i, 1] = iext.uncs[src][sindxs[0]]
-            else:
-                oext[i, 0] = np.nan
-                oext[i, 1] = np.nan
-
-    return oext
-
-
-def get_irvs(rvs):
-    """
-    Compute 1/rvs values (including uncs) from rvs vals
-    """
-    irvs = np.zeros(rvs.shape)
-    irvs[:, 0] = 1 / rvs[:, 0]
-    irvs[:, 1] = irvs[:, 0] * (rvs[:, 1] / rvs[:, 0])
-    return irvs
+from .fit_irv import get_irvs, get_alav
 
 
 if __name__ == "__main__":
