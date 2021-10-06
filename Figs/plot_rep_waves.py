@@ -9,7 +9,7 @@ from astropy.modeling import models, fitting
 
 from measure_extinction.extdata import ExtData
 
-from .fit_irv import get_irvs, get_alav
+from fit_irv import get_irvs, get_alav
 
 
 if __name__ == "__main__":
@@ -150,30 +150,63 @@ if __name__ == "__main__":
         if "STIS" in rname:
             oexts = get_alav(exts_fit19, "STIS", repwaves[rname])
             xvals = rvs_fit19[:, 0]
+            xvals_unc = rvs_fit19[:, 1]
             yvals = oexts[:, 0]
-            ax[i].plot(
-                rvs_fit19[:, 0], oexts[:, 0], psym_fit19, fillstyle="none", label="F19"
+            yvals_unc = oexts[:, 1]
+            ax[i].errorbar(
+                rvs_fit19[:, 0],
+                oexts[:, 0],
+                xerr=xvals_unc,
+                yerr=yvals_unc,
+                fmt=psym_fit19,
+                fillstyle="none",
+                label="F19",
             )
+
         elif "SpeX_SXD" in rname:
             oexts = get_alav(exts_dec22, "SpeX_SXD", repwaves[rname])
             xvals = rvs_dec22[:, 0]
+            xvals_unc = rvs_dec22[:, 1]
             yvals = oexts[:, 0]
-            ax[i].plot(
-                rvs_dec22[:, 0], oexts[:, 0], psym_dec22, fillstyle="none", label="D22"
+            yvals_unc = oexts[:, 1]
+            ax[i].errorbar(
+                rvs_dec22[:, 0],
+                oexts[:, 0],
+                xerr=xvals_unc,
+                yerr=yvals_unc,
+                fmt=psym_dec22,
+                fillstyle="none",
+                label="D22",
             )
         elif "SpeX_LXD" in rname:
             oexts = get_alav(exts_dec22, "SpeX_LXD", repwaves[rname])
             xvals = rvs_dec22[:, 0]
+            xvals_unc = rvs_dec22[:, 1]
             yvals = oexts[:, 0]
-            ax[i].plot(
-                rvs_dec22[:, 0], oexts[:, 0], psym_dec22, fillstyle="none", label="D22"
+            yvals_unc = oexts[:, 1]
+            ax[i].errorbar(
+                rvs_dec22[:, 0],
+                oexts[:, 0],
+                xerr=xvals_unc,
+                yerr=yvals_unc,
+                fmt=psym_dec22,
+                fillstyle="none",
+                label="D22",
             )
         elif "IRS" in rname:
             oexts = get_alav(exts_gor21, "IRS", repwaves[rname])
             xvals = rvs_gor21[:, 0]
+            xvals_unc = rvs_gor21[:, 1]
             yvals = oexts[:, 0]
-            ax[i].plot(
-                rvs_gor21[:, 0], oexts[:, 0], psym_gor21, fillstyle="none", label="G21"
+            yvals_unc = oexts[:, 1]
+            ax[i].errorbar(
+                rvs_gor21[:, 0],
+                oexts[:, 0],
+                xerr=xvals_unc,
+                yerr=yvals_unc,
+                fmt=psym_gor21,
+                fillstyle="none",
+                label="G21",
             )
         elif "IUE" in rname:
             oexts = get_alav(exts_gor09, "IUE", repwaves[rname])

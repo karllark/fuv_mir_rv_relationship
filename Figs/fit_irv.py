@@ -59,7 +59,10 @@ def fit_allwaves(exts, src, ofilename):
     xvals = irvs[:, 0]
 
     # possible wavelengths
-    poss_waves = exts[0].waves[src]
+    if src not in exts[0].waves.keys():
+        poss_waves = exts[10].waves[src]
+    else:
+        poss_waves = exts[0].waves[src]
 
     fit = fitting.LinearLSQFitter()
     line_init = models.Linear1D()
@@ -72,7 +75,7 @@ def fit_allwaves(exts, src, ofilename):
     for k in tqdm(range(nwaves), desc=src):
         rwave = poss_waves[k]
         oexts = get_alav(exts, src, rwave)
-        if np.sum(np.isfinite(oexts[:, 0])) > 10:
+        if np.sum(np.isfinite(oexts[:, 0])) > 5:
             npts[k] = np.sum(np.isfinite(oexts[:, 0]))
             yvals = oexts[:, 0]
             gvals = np.isfinite(yvals)
@@ -91,7 +94,7 @@ def fit_allwaves(exts, src, ofilename):
     otab["intercepts"] = intercepts
     otab["sigmas"] = sigmas
     otab["npts"] = npts
-    otab.write(f"results/{ofilename}")
+    otab.write(f"results/{ofilename}", overwrite=True)
 
     return (poss_waves, slopes, intercepts, sigmas, npts)
 
@@ -112,7 +115,17 @@ def get_exts(sampstr):
 if __name__ == "__main__":
 
     exts_gor09 = get_exts("gor09")
+    fit_allwaves(exts_gor09, "FUSE", "gor09_fuse_irv_params.fits")
+    fit_allwaves(exts_gor09, "IUE", "gor09_iue_irv_params.fits")
 
-    waves, slopes, intercepts, sigmas, npts = fit_allwaves(
-        exts_gor09, "FUSE", "gor09_fuse_irv_params.fits"
-    )
+    exts_fit19 = get_exts("fit19")
+    fit_allwaves(exts_fit19, "STIS", "fit19_stis_irv_params.fits")
+
+    exts_fit19 = get_exts("gor21")
+    fit_allwaves(exts_fit19, "IUE", "gor21_iue_irv_params.fits")
+    fit_allwaves(exts_fit19, "IRS", "gor21_irs_irv_params.fits")
+
+    exts_dec22 = get_exts("decleir22/")
+    fit_allwaves(exts_dec22, "IUE", "dec22_iue_irv_params.fits")
+    fit_allwaves(exts_dec22, "SpeX_SXD", "dec22_spexsxd_irv_params.fits")
+    fit_allwaves(exts_dec22, "SpeX_LXD", "dec22_spexlxd_irv_params.fits")

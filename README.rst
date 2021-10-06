@@ -25,12 +25,14 @@ This code is licensed under a 3-clause BSD style license (see the
 Data
 ----
 
-
+Linear fits of 1/R(V) versus A(lambda)/A(V): python Figs/fit_irv.py
 
 Figures
 -------
 
 1. 1/R(V) relationship at representative wavelengths: python Figs/plot_rep_waves.py
+
+2. Fit parameters versus 1/R(V): python Figs/plot_irv_params.py
 
 Tables
 ------
