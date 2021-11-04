@@ -21,6 +21,7 @@ if __name__ == "__main__":
         for src in ext.waves.keys():
             gvals = ext.npts[src] > 0
             ext.exts[src][gvals] = (ext.exts[src][gvals] - 1.0) * av
+            ext.uncs[src][gvals] *= av  # at least get the units right
             # remove the av_unc from ext uncs
             #   this reverses what was done in compute_alav_sub.pro
             # ***not working*** results in neg uncs as av_unc/av too high

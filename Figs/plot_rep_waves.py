@@ -1,11 +1,14 @@
 import glob
 import argparse
 import matplotlib.pyplot as plt
+from matplotlib.patches import Ellipse
+from matplotlib import cm
 import numpy as np
 
 import astropy.units as u
 from astropy.modeling import models, fitting
-# from astropy.stats import sigma_clip
+
+from hyperfit.linfit import LinFit as HFLinFit
 
 from measure_extinction.extdata import ExtData
 
@@ -44,10 +47,16 @@ if __name__ == "__main__":
     # get R(V) values
     n_gor09 = len(files_gor09)
     rvs_gor09 = np.zeros((n_gor09, 2))
+    avs_gor09 = np.zeros((n_gor09, 2))
     for i, iext in enumerate(exts_gor09):
+        av = iext.columns["AV"]
+        avs_gor09[i, 0] = av[0]
+        avs_gor09[i, 1] = av[1]
+
         irv = iext.columns["RV"]
         rvs_gor09[i, 0] = irv[0]
         rvs_gor09[i, 1] = irv[1]
+
         iext.trans_elv_alav()
 
     n_val04 = len(files_val04)
@@ -70,7 +79,12 @@ if __name__ == "__main__":
     # get R(V) values
     n_gor21 = len(files_gor21)
     rvs_gor21 = np.zeros((n_gor21, 2))
+    avs_gor21 = np.zeros((n_gor21, 2))
     for i, iext in enumerate(exts_gor21):
+        av = iext.columns["AV"]
+        avs_gor21[i, 0] = av[0]
+        avs_gor21[i, 1] = av[1]
+
         irv = iext.columns["RV"]
         rvs_gor21[i, 0] = irv[0]
         rvs_gor21[i, 1] = irv[1]
@@ -79,7 +93,12 @@ if __name__ == "__main__":
     # get R(V) values
     n_dec22 = len(files_dec22)
     rvs_dec22 = np.zeros((n_dec22, 2))
+    avs_dec22 = np.zeros((n_dec22, 2))
     for i, iext in enumerate(exts_dec22):
+        av = iext.columns["AV"]
+        avs_dec22[i, 0] = av[0]
+        avs_dec22[i, 1] = av[1]
+
         irv = iext.columns["RV"]
         rvs_dec22[i, 0] = irv[0]
         rvs_dec22[i, 1] = irv[1]
@@ -132,12 +151,14 @@ if __name__ == "__main__":
         yvals = None
         xvals_unc = None
         yvals_unc = None
+        avfrac = None
         if "FUSE" in rname:
             oexts = get_alav(exts_gor09, "FUSE", repwaves[rname])
             xvals = rvs_gor09[:, 0]
             xvals_unc = rvs_gor09[:, 1]
             yvals = oexts[:, 0]
             yvals_unc = oexts[:, 1]
+            avfrac = avs_gor09[:, 1] / avs_gor09[:, 0]
             ax[i].errorbar(
                 rvs_gor09[:, 0],
                 oexts[:, 0],
@@ -169,6 +190,7 @@ if __name__ == "__main__":
             xvals_unc = rvs_dec22[:, 1]
             yvals = oexts[:, 0]
             yvals_unc = oexts[:, 1]
+            avfrac = avs_dec22[:, 1] / avs_dec22[:, 0]
             ax[i].errorbar(
                 rvs_dec22[:, 0],
                 oexts[:, 0],
@@ -184,6 +206,7 @@ if __name__ == "__main__":
             xvals_unc = rvs_dec22[:, 1]
             yvals = oexts[:, 0]
             yvals_unc = oexts[:, 1]
+            avfrac = avs_dec22[:, 1] / avs_dec22[:, 0]
             ax[i].errorbar(
                 rvs_dec22[:, 0],
                 oexts[:, 0],
@@ -199,6 +222,7 @@ if __name__ == "__main__":
             xvals_unc = rvs_gor21[:, 1]
             yvals = oexts[:, 0]
             yvals_unc = oexts[:, 1]
+            avfrac = avs_gor21[:, 1] / avs_gor21[:, 0]
             ax[i].errorbar(
                 rvs_gor21[:, 0],
                 oexts[:, 0],
@@ -263,16 +287,66 @@ if __name__ == "__main__":
             line_init = models.Linear1D()
             gvals = np.isfinite(yvals)
             fitted_line = fit(line_init, xvals[gvals], yvals[gvals])
-            ax[i].plot(xvals, fitted_line(xvals), "k-", label="Fit")
 
-            # or_fit = fitting.FittingWithOutlierRemoval(
-            #     fit, sigma_clip, niter=3, sigma=3.0
-            # )
-            # fitted_line_wclip, mask = or_fit(
-            #     line_init, xvals[gvals], yvals[gvals]
-            # )  # , weights=1.0/yunc)
-            # filtered_data = np.ma.masked_array(yvals[gvals], mask=mask)
-            # ax[i].plot(xvals, fitted_line_wclip(xvals), "k--", label="Fit w/ clipping")
+            mod_xvals = np.array([0.15, 0.5])
+            ax[i].plot(mod_xvals, fitted_line(mod_xvals), "k-", label="Fit")
+
+            # print(fitted_line)
+
+            if avfrac is not None:
+                # fit a line with hyperfit to account for correlated uncertainties
+                ndata = np.sum(gvals)
+                hfdata, hfcov = np.zeros((2, ndata)), np.zeros((2, 2, ndata))
+                corr_xy = -1.0 * avfrac
+
+                hfdata[0, :] = xvals[gvals]
+                hfdata[1, :] = yvals[gvals]
+                for k in range(ndata):
+                    hfcov[0, 0, k] = xvals_unc[gvals][k] ** 2
+                    hfcov[0, 1, k] = (
+                        xvals_unc[gvals][k] * yvals_unc[gvals][k] * corr_xy[gvals][k]
+                    )
+                    hfcov[1, 0, k] = (
+                        xvals_unc[gvals][k] * yvals_unc[gvals][k] * corr_xy[gvals][k]
+                    )
+                    hfcov[1, 1, k] = yvals_unc[gvals][k] ** 2
+
+                hf_fit = HFLinFit(hfdata, hfcov)
+
+                ds = 0.5 * np.absolute(fitted_line.slope)
+                di = 0.5 * np.absolute(fitted_line.intercept)
+                bounds = (
+                    (fitted_line.slope - ds, fitted_line.slope + ds),
+                    (fitted_line.intercept - di, fitted_line.intercept + di),
+                    (1.0e-5, 5.0),
+                )
+                hf_fit_params = hf_fit.optimize(bounds, verbose=False)
+                ax[i].plot(
+                    mod_xvals,
+                    hf_fit.coords[1] + hf_fit.coords[0] * mod_xvals,
+                    "k:",
+                    label="HF Fit",
+                )
+
+                # print(hf_fit_params)
+
+                sigmas = hf_fit.get_sigmas()
+
+                # Generate ellipses
+                for k in range(ndata):
+                    e = Ellipse(
+                        xy=[hfdata[0][k], hfdata[1][k]],
+                        width=2 * xvals_unc[gvals][k],
+                        height=2 * yvals_unc[gvals][k],
+                        # angle=0.0,
+                        alpha=0.20,
+                        color=cm.viridis(sigmas[k] / np.amax(sigmas))[0],
+                        # edgecolor="k",
+                        angle=90.0 - np.rad2deg(np.arccos(corr_xy[k])),
+                        # angle=np.rad2deg(corr_xy[k] * 45.0 * np.pi / 180.0),
+                    )
+                    # print(yvals[gvals][k], yvals_unc[gvals][k], np.rad2deg(corr_xy[k] * 45.0 * np.pi / 180.0))
+                    ax[i].add_artist(e)
 
     fax[0, 1].set_xlim(xrange)
 
