@@ -92,7 +92,6 @@ if __name__ == "__main__":
     )
 
     fig.tight_layout()
-    plt.show()
 
     fname = "fuv_mir_rv_fit_params"
     if args.png:

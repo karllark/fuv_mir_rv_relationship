@@ -288,7 +288,7 @@ if __name__ == "__main__":
             gvals = np.isfinite(yvals)
             fitted_line = fit(line_init, xvals[gvals], yvals[gvals])
 
-            mod_xvals = np.array([0.15, 0.5])
+            mod_xvals = np.array(xrange)
             ax[i].plot(mod_xvals, fitted_line(mod_xvals), "k-", label="Fit")
 
             # print(fitted_line)
@@ -321,12 +321,11 @@ if __name__ == "__main__":
                     (1.0e-5, 5.0),
                 )
                 hf_fit_params = hf_fit.optimize(bounds, verbose=False)
-                ax[i].plot(
-                    mod_xvals,
-                    hf_fit.coords[1] + hf_fit.coords[0] * mod_xvals,
-                    "k:",
-                    label="HF Fit",
-                )
+                mod_yvals_hf = hf_fit.coords[1] + hf_fit.coords[0] * mod_xvals
+                ax[i].plot(mod_xvals, mod_yvals_hf, "k--", label="HF Fit")
+
+                ax[i].plot(mod_xvals, mod_yvals_hf - hf_fit.vert_scat, "k:")
+                ax[i].plot(mod_xvals, mod_yvals_hf + hf_fit.vert_scat, "k:")
 
                 # print(hf_fit_params)
 
