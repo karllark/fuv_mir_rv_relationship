@@ -83,7 +83,7 @@ if __name__ == "__main__":
     for i, iext in enumerate(exts_gor21):
         av = iext.columns["AV"]
         avs_gor21[i, 0] = av[0]
-        avs_gor21[i, 1] = av[1]
+        avs_gor21[i, 1] = 0.5 * (av[1] + av[2])
 
         irv = iext.columns["RV"]
         rvs_gor21[i, 0] = irv[0]
@@ -97,11 +97,11 @@ if __name__ == "__main__":
     for i, iext in enumerate(exts_dec22):
         av = iext.columns["AV"]
         avs_dec22[i, 0] = av[0]
-        avs_dec22[i, 1] = av[1]
+        avs_dec22[i, 1] = 0.5 * (av[1] + av[2])
 
         irv = iext.columns["RV"]
         rvs_dec22[i, 0] = irv[0]
-        rvs_dec22[i, 1] = irv[1]
+        rvs_dec22[i, 1] = 0.5 * (irv[1] + irv[2])
         iext.trans_elv_alav()
 
     if args.rv:
@@ -141,7 +141,7 @@ if __name__ == "__main__":
         "STIS2": 0.7 * u.micron,
         # "BAND1": 0.45 * u.micron,
         # "BAND2": 2.1 * u.micron,
-        "SpeX_SXD1": 1.5 * u.micron,
+        "SpeX_SXD1": 1.65 * u.micron,
         "SpeX_LXD1": 3.5 * u.micron,
         "IRS1": 15.0 * u.micron,
     }
@@ -191,6 +191,7 @@ if __name__ == "__main__":
             yvals = oexts[:, 0]
             yvals_unc = oexts[:, 1]
             avfrac = avs_dec22[:, 1] / avs_dec22[:, 0]
+            print(yvals_unc)
             ax[i].errorbar(
                 rvs_dec22[:, 0],
                 oexts[:, 0],
