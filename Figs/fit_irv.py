@@ -98,12 +98,15 @@ def fit_allwaves(exts, src, ofilename):
         rwave = poss_waves[k]
         oexts = get_alav(exts, src, rwave)
         if np.sum(np.isfinite(oexts[:, 0])) > 5:
+            # print(rwave)
             # regular unweighted fit
             npts[k] = np.sum(np.isfinite(oexts[:, 0]))
             yvals = oexts[:, 0]
             yvals_unc = oexts[:, 0]
             gvals = np.isfinite(yvals)
-            fitted_line = fit(line_init, xvals[gvals], yvals[gvals])
+            fitted_line = fit(
+                line_init, xvals[gvals], yvals[gvals], weights=1.0 / yvals_unc[gvals]
+            )
             slopes[k] = fitted_line.slope.value
             intercepts[k] = fitted_line.intercept.value
             rmss[k] = np.sqrt(
@@ -121,22 +124,27 @@ def fit_allwaves(exts, src, ofilename):
             for ll in range(ndata):
                 hfcov[0, 0, ll] = xvals_unc[gvals][ll] ** 2
                 hfcov[0, 1, ll] = (
-                    xvals_unc[gvals][ll] * yvals_unc[gvals][ll] * corr_xy[gvals][ll]
+                    xvals_unc[gvals][ll]
+                    * yvals_unc[gvals][ll]
+                    * (corr_xy[gvals][ll] ** 2)
                 )
                 hfcov[1, 0, ll] = (
-                    xvals_unc[gvals][ll] * yvals_unc[gvals][ll] * corr_xy[gvals][ll]
+                    xvals_unc[gvals][ll]
+                    * yvals_unc[gvals][ll]
+                    * (corr_xy[gvals][ll] ** 2)
                 )
                 hfcov[1, 1, ll] = yvals_unc[gvals][ll] ** 2
 
             hf_fit = HFLinFit(hfdata, hfcov)
 
-            ds = 0.5 * np.absolute(fitted_line.slope)
-            di = 0.5 * np.absolute(fitted_line.intercept)
-            bounds = (
-                (fitted_line.slope - ds, fitted_line.slope + ds),
-                (fitted_line.intercept - di, fitted_line.intercept + di),
-                (1.0e-5, 5.0),
-            )
+            # ds = 0.5 * np.absolute(fitted_line.slope)
+            # di = 0.5 * np.absolute(fitted_line.intercept)
+            # bounds = (
+            #     (fitted_line.slope - ds, fitted_line.slope + ds),
+            #     (fitted_line.intercept - di, fitted_line.intercept + di),
+            #     (1.0e-5, 5.0),
+            # )
+            bounds = ((-2.0, 40.0), (-5.0, 5.0), (1.0e-5, 5.0))
             hf_fit_params = hf_fit.optimize(bounds, verbose=False)
             hfslopes[k] = hf_fit_params[0][0]
             hfintercepts[k] = hf_fit_params[0][1]

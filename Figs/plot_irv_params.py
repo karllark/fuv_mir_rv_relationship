@@ -13,7 +13,7 @@ def plot_irv_ssamp(ax, itab, label):
         ax[1, i].plot(
             itab["waves"][gvals], itab["intercepts"][gvals], label=label, alpha=0.75
         )
-        ax[2, i].plot(
+        ax[3, i].plot(
             itab["waves"][gvals], itab["sigmas"][gvals], label=label, alpha=0.75
         )
 
@@ -45,7 +45,7 @@ if __name__ == "__main__":
     plt.rc("axes", linewidth=2)
     plt.rc("xtick.major", width=2)
     plt.rc("ytick.major", width=2)
-    fig, ax = plt.subplots(nrows=3, ncols=2, figsize=(16, 10), sharex="col")
+    fig, ax = plt.subplots(nrows=4, ncols=2, figsize=(16, 9), sharex="col", constrained_layout=True)
 
     # plot parameters
     plot_irv_ssamp(ax, gor09_fuse, "G09 FUSE")
@@ -57,24 +57,25 @@ if __name__ == "__main__":
     plot_irv_ssamp(ax, dec22_spexlxd, "D22 SpeXLXD")
     plot_irv_ssamp(ax, gor21_irs, "G21 IRS")
 
-    ax[2, 0].set_xscale("log")
-    ax[2, 1].set_xscale("log")
+    ax[3, 0].set_xscale("log")
+    ax[3, 1].set_xscale("log")
 
-    ax[2, 0].set_xlim(0.09, 0.35)
-    ax[2, 1].set_xlim(0.30, 20.0)
+    ax[3, 0].set_xlim(0.09, 0.35)
+    ax[3, 1].set_xlim(0.30, 20.0)
 
     ax[0, 0].set_ylim(0.0, 25.0)
     ax[1, 0].set_ylim(-2.0, 2.0)
-    ax[2, 0].set_ylim(0.0, 2.0)
+    ax[3, 0].set_ylim(0.0, 2.0)
     ax[0, 1].set_ylim(-1.0, 3.0)
     ax[1, 1].set_ylim(-0.1, 1.1)
-    ax[2, 1].set_ylim(0.0, 0.10)
+    ax[3, 1].set_ylim(0.0, 0.10)
 
-    ax[2, 0].set_xlabel(r"$\lambda$ [$mu$m]")
-    ax[2, 1].set_xlabel(r"$\lambda$ [$mu$m]")
+    ax[3, 0].set_xlabel(r"$\lambda$ [$\mu$m]")
+    ax[3, 1].set_xlabel(r"$\lambda$ [$\mu$m]")
     ax[0, 0].set_ylabel("slope")
     ax[1, 0].set_ylabel("intercept")
     ax[2, 0].set_ylabel("sigma")
+    ax[3, 0].set_ylabel("scatter")
 
     ax[0, 1].axhline(linestyle="--", alpha=0.25, color="k", linewidth=2)
     ax[1, 1].axhline(linestyle="--", alpha=0.25, color="k", linewidth=2)
@@ -82,15 +83,16 @@ if __name__ == "__main__":
 
     ax[0, 1].legend(ncol=2)
 
-    ax[2, 0].xaxis.set_major_formatter(ScalarFormatter())
-    ax[2, 0].xaxis.set_minor_formatter(ScalarFormatter())
-    ax[2, 0].set_xticks([0.09, 0.1, 0.12, 0.15, 0.2, 0.25, 0.3, 0.35], minor=True)
-    ax[2, 1].xaxis.set_major_formatter(ScalarFormatter())
-    ax[2, 1].xaxis.set_minor_formatter(ScalarFormatter())
-    ax[2, 1].set_xticks(
+    ax[3, 0].xaxis.set_major_formatter(ScalarFormatter())
+    ax[3, 0].xaxis.set_minor_formatter(ScalarFormatter())
+    ax[3, 0].set_xticks([0.09, 0.1, 0.12, 0.15, 0.2, 0.25, 0.3, 0.35], minor=True)
+    ax[3, 1].xaxis.set_major_formatter(ScalarFormatter())
+    ax[3, 1].xaxis.set_minor_formatter(ScalarFormatter())
+    ax[3, 1].set_xticks(
         [0.3, 0.5, 0.8, 1.0, 1.5, 2.0, 3.0, 5.0, 7.0, 10.0, 20.0], minor=True
     )
 
+    # plt.subplots_adjust(hspace=0)
     fig.tight_layout()
 
     fname = "fuv_mir_rv_fit_params"

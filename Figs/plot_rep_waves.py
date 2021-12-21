@@ -6,7 +6,7 @@ from matplotlib import cm
 import numpy as np
 
 import astropy.units as u
-from astropy.modeling import models, fitting
+# from astropy.modeling import models, fitting
 
 from hyperfit.linfit import LinFit as HFLinFit
 
@@ -163,6 +163,7 @@ if __name__ == "__main__":
 
     repwaves = {
         "FUSE1": 0.1 * u.micron,
+        # "FUSE1": 0.09394144266843796 * u.micron,
         "IUE1": 0.15 * u.micron,
         "IUE2": 0.2175 * u.micron,
         # "IUE3": 0.3 * u.micron,
@@ -315,13 +316,16 @@ if __name__ == "__main__":
 
         # fit a line
         if xvals is not None:
-            fit = fitting.LinearLSQFitter()
-            line_init = models.Linear1D()
+            # fit = fitting.LinearLSQFitter()
+            # line_init = models.Linear1D()
             gvals = np.isfinite(yvals)
-            fitted_line = fit(line_init, xvals[gvals], yvals[gvals])
-
+            # fitted_line = fit(
+            #     line_init, xvals[gvals], yvals[gvals], weights=1.0 / yvals_unc[gvals]
+            # )
+            # print(fitted_line)
+            #
             mod_xvals = np.array(xrange)
-            ax[i].plot(mod_xvals, fitted_line(mod_xvals), "k-", label="Fit")
+            # ax[i].plot(mod_xvals, fitted_line(mod_xvals), "k-", label="Fit")
 
             # print(fitted_line)
 
@@ -336,22 +340,27 @@ if __name__ == "__main__":
                 for k in range(ndata):
                     hfcov[0, 0, k] = xvals_unc[gvals][k] ** 2
                     hfcov[0, 1, k] = (
-                        xvals_unc[gvals][k] * yvals_unc[gvals][k] * corr_xy[gvals][k]
+                        xvals_unc[gvals][k]
+                        * yvals_unc[gvals][k]
+                        * (corr_xy[gvals][k] ** 2)
                     )
                     hfcov[1, 0, k] = (
-                        xvals_unc[gvals][k] * yvals_unc[gvals][k] * corr_xy[gvals][k]
+                        xvals_unc[gvals][k]
+                        * yvals_unc[gvals][k]
+                        * (corr_xy[gvals][k] ** 2)
                     )
                     hfcov[1, 1, k] = yvals_unc[gvals][k] ** 2
 
                 hf_fit = HFLinFit(hfdata, hfcov)
 
-                ds = 0.5 * np.absolute(fitted_line.slope)
-                di = 0.5 * np.absolute(fitted_line.intercept)
-                bounds = (
-                    (fitted_line.slope - ds, fitted_line.slope + ds),
-                    (fitted_line.intercept - di, fitted_line.intercept + di),
-                    (1.0e-5, 5.0),
-                )
+                # ds = 0.5 * np.absolute(fitted_line.slope)
+                # di = 0.5 * np.absolute(fitted_line.intercept)
+                # bounds = (
+                #     (fitted_line.slope - ds, fitted_line.slope + ds),
+                #     (fitted_line.intercept - di, fitted_line.intercept + di),
+                #     (1.0e-5, 5.0),
+                # )
+                bounds = ((-2.0, 40.0), (-5.0, 5.0), (1.0e-5, 5.0))
                 hf_fit_params = hf_fit.optimize(bounds, verbose=False)
                 mod_yvals_hf = hf_fit.coords[1] + hf_fit.coords[0] * mod_xvals
                 ax[i].plot(mod_xvals, mod_yvals_hf, "k--", label="HF Fit")
