@@ -4,6 +4,7 @@ from tqdm import tqdm
 import numpy as np
 from astropy.modeling import models, fitting
 from astropy.table import QTable
+from hyperfit.linfit import LinFit as HFLinFit
 
 from measure_extinction.extdata import ExtData
 
@@ -25,6 +26,18 @@ def get_alav(exts, src, wave):
                 oext[i, 1] = np.nan
 
     return oext
+
+
+def get_avs(exts):
+    """
+    Get the A(V) values from the extinction curve info
+    """
+    avs = np.zeros((len(exts), 2))
+    for i, iext in enumerate(exts):
+        av = iext.columns["AV"]
+        avs[i, 0] = av[0]
+        avs[i, 1] = av[1]
+    return avs
 
 
 def get_rvs(exts):
@@ -57,6 +70,11 @@ def fit_allwaves(exts, src, ofilename):
     rvs = get_rvs(exts)
     irvs = get_irvs(rvs)
     xvals = irvs[:, 0]
+    xvals_unc = irvs[:, 1]
+
+    # avs
+    avs = get_avs(exts)
+    avfrac = avs[:, 1] / avs[:, 0]
 
     # possible wavelengths
     if src not in exts[0].waves.keys():
@@ -71,20 +89,61 @@ def fit_allwaves(exts, src, ofilename):
     slopes = np.zeros((nwaves))
     intercepts = np.zeros((nwaves))
     npts = np.zeros(nwaves)
-    sigmas = np.zeros(nwaves)
+    rmss = np.zeros(nwaves)
+    hfslopes = np.zeros((nwaves))
+    hfintercepts = np.zeros((nwaves))
+    hfsigmas = np.zeros(nwaves)
+    hfrmss = np.zeros(nwaves)
     for k in tqdm(range(nwaves), desc=src):
         rwave = poss_waves[k]
         oexts = get_alav(exts, src, rwave)
         if np.sum(np.isfinite(oexts[:, 0])) > 5:
+            # regular unweighted fit
             npts[k] = np.sum(np.isfinite(oexts[:, 0]))
             yvals = oexts[:, 0]
+            yvals_unc = oexts[:, 0]
             gvals = np.isfinite(yvals)
             fitted_line = fit(line_init, xvals[gvals], yvals[gvals])
             slopes[k] = fitted_line.slope.value
             intercepts[k] = fitted_line.intercept.value
-            sigmas[k] = np.sqrt(
+            rmss[k] = np.sqrt(
                 np.sum(np.square(yvals[gvals] - fitted_line(xvals[gvals])))
                 / (npts[k] - 1)
+            )
+
+            # hyperfit using x and y uncs and covariance between them
+            ndata = np.sum(gvals)
+            hfdata, hfcov = np.zeros((2, ndata)), np.zeros((2, 2, ndata))
+            corr_xy = -1.0 * avfrac
+
+            hfdata[0, :] = xvals[gvals]
+            hfdata[1, :] = yvals[gvals]
+            for ll in range(ndata):
+                hfcov[0, 0, ll] = xvals_unc[gvals][ll] ** 2
+                hfcov[0, 1, ll] = (
+                    xvals_unc[gvals][ll] * yvals_unc[gvals][ll] * corr_xy[gvals][ll]
+                )
+                hfcov[1, 0, ll] = (
+                    xvals_unc[gvals][ll] * yvals_unc[gvals][ll] * corr_xy[gvals][ll]
+                )
+                hfcov[1, 1, ll] = yvals_unc[gvals][ll] ** 2
+
+            hf_fit = HFLinFit(hfdata, hfcov)
+
+            ds = 0.5 * np.absolute(fitted_line.slope)
+            di = 0.5 * np.absolute(fitted_line.intercept)
+            bounds = (
+                (fitted_line.slope - ds, fitted_line.slope + ds),
+                (fitted_line.intercept - di, fitted_line.intercept + di),
+                (1.0e-5, 5.0),
+            )
+            hf_fit_params = hf_fit.optimize(bounds, verbose=False)
+            hfslopes[k] = hf_fit_params[0][0]
+            hfintercepts[k] = hf_fit_params[0][1]
+            hfsigmas[k] = hf_fit_params[1]
+            hf_modline = hfintercepts[k] + hfslopes[k] * xvals[gvals]
+            hfrmss[k] = np.sqrt(
+                np.sum(np.square(yvals[gvals] - hf_modline)) / (npts[k] - 1)
             )
 
     # save the fits
@@ -92,11 +151,15 @@ def fit_allwaves(exts, src, ofilename):
     otab["waves"] = poss_waves
     otab["slopes"] = slopes
     otab["intercepts"] = intercepts
-    otab["sigmas"] = sigmas
+    otab["rmss"] = rmss
     otab["npts"] = npts
+    otab["hfslopes"] = hfslopes
+    otab["hfintercepts"] = hfintercepts
+    otab["hfsigmas"] = hfsigmas
+    otab["hfrmss"] = hfrmss
     otab.write(f"results/{ofilename}", overwrite=True)
 
-    return (poss_waves, slopes, intercepts, sigmas, npts)
+    return (poss_waves, slopes, intercepts, rmss, npts)
 
 
 def get_exts(sampstr):
