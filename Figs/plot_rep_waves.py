@@ -15,6 +15,25 @@ from measure_extinction.extdata import ExtData
 from fit_irv import get_irvs, get_alav
 
 
+def plot_exts(exts, rvs, avs, ctype, cwave, psym, label):
+    oexts = get_alav(exts, ctype, cwave)
+    xvals = rvs[:, 0]
+    xvals_unc = rvs[:, 1]
+    yvals = oexts[:, 0]
+    yvals_unc = oexts[:, 1]
+    avfrac = avs[:, 1] / avs[:, 0]
+    ax[i].errorbar(
+        rvs[:, 0],
+        oexts[:, 0],
+        xerr=xvals_unc,
+        yerr=yvals_unc,
+        fmt=psym,
+        fillstyle="none",
+        label=label,
+    )
+    return (xvals, xvals_unc, yvals, yvals_unc, avfrac)
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--rv", help="plot versus R(V)", action="store_true")
@@ -61,7 +80,12 @@ if __name__ == "__main__":
 
     n_val04 = len(files_val04)
     rvs_val04 = np.zeros((n_val04, 2))
+    avs_val04 = np.zeros((n_val04, 2))
     for i, iext in enumerate(exts_val04):
+        av = iext.columns["AV"]
+        avs_val04[i, 0] = av[0]
+        avs_val04[i, 1] = av[1]
+
         irv = iext.columns["RV"]
         rvs_val04[i, 0] = irv[0]
         rvs_val04[i, 1] = irv[1]
@@ -70,7 +94,12 @@ if __name__ == "__main__":
     # get R(V) values
     n_fit19 = len(files_fit19)
     rvs_fit19 = np.zeros((n_fit19, 2))
+    avs_fit19 = np.zeros((n_fit19, 2))
     for i, iext in enumerate(exts_fit19):
+        av = iext.columns["AV"]
+        avs_fit19[i, 0] = av[0]
+        avs_fit19[i, 1] = av[1]
+
         irv = iext.columns["RV"]
         rvs_fit19[i, 0] = irv[0]
         rvs_fit19[i, 1] = irv[1]
@@ -152,112 +181,114 @@ if __name__ == "__main__":
         xvals_unc = None
         yvals_unc = None
         avfrac = None
+
         if "FUSE" in rname:
-            oexts = get_alav(exts_gor09, "FUSE", repwaves[rname])
-            xvals = rvs_gor09[:, 0]
-            xvals_unc = rvs_gor09[:, 1]
-            yvals = oexts[:, 0]
-            yvals_unc = oexts[:, 1]
-            avfrac = avs_gor09[:, 1] / avs_gor09[:, 0]
-            ax[i].errorbar(
-                rvs_gor09[:, 0],
-                oexts[:, 0],
-                xerr=xvals_unc,
-                yerr=yvals_unc,
-                fmt=psym_gor09,
-                fillstyle="none",
-                label="G09",
+            xvals, xvals_unc, yvals, yvals_unc, avfrac = plot_exts(
+                exts_gor09,
+                rvs_gor09,
+                avs_gor09,
+                "FUSE",
+                repwaves[rname],
+                psym_gor09,
+                "G09",
             )
+
         if "STIS" in rname:
-            oexts = get_alav(exts_fit19, "STIS", repwaves[rname])
-            xvals = rvs_fit19[:, 0]
-            xvals_unc = rvs_fit19[:, 1]
-            yvals = oexts[:, 0]
-            yvals_unc = oexts[:, 1]
-            ax[i].errorbar(
-                rvs_fit19[:, 0],
-                oexts[:, 0],
-                xerr=xvals_unc,
-                yerr=yvals_unc,
-                fmt=psym_fit19,
-                fillstyle="none",
-                label="F19",
+            xvals, xvals_unc, yvals, yvals_unc, avfrac = plot_exts(
+                exts_fit19,
+                rvs_fit19,
+                avs_fit19,
+                "STIS",
+                repwaves[rname],
+                psym_fit19,
+                "F19",
             )
 
         elif "SpeX_SXD" in rname:
-            oexts = get_alav(exts_dec22, "SpeX_SXD", repwaves[rname])
-            xvals = rvs_dec22[:, 0]
-            xvals_unc = rvs_dec22[:, 1]
-            yvals = oexts[:, 0]
-            yvals_unc = oexts[:, 1]
-            avfrac = avs_dec22[:, 1] / avs_dec22[:, 0]
-            print(yvals_unc)
-            ax[i].errorbar(
-                rvs_dec22[:, 0],
-                oexts[:, 0],
-                xerr=xvals_unc,
-                yerr=yvals_unc,
-                fmt=psym_dec22,
-                fillstyle="none",
-                label="D22",
+            xvals, xvals_unc, yvals, yvals_unc, avfrac = plot_exts(
+                exts_dec22,
+                rvs_dec22,
+                avs_dec22,
+                "SpeX_SXD",
+                repwaves[rname],
+                psym_dec22,
+                "D22",
             )
+
         elif "SpeX_LXD" in rname:
-            oexts = get_alav(exts_dec22, "SpeX_LXD", repwaves[rname])
-            xvals = rvs_dec22[:, 0]
-            xvals_unc = rvs_dec22[:, 1]
-            yvals = oexts[:, 0]
-            yvals_unc = oexts[:, 1]
-            avfrac = avs_dec22[:, 1] / avs_dec22[:, 0]
-            ax[i].errorbar(
-                rvs_dec22[:, 0],
-                oexts[:, 0],
-                xerr=xvals_unc,
-                yerr=yvals_unc,
-                fmt=psym_dec22,
-                fillstyle="none",
-                label="D22",
+            xvals, xvals_unc, yvals, yvals_unc, avfrac = plot_exts(
+                exts_dec22,
+                rvs_dec22,
+                avs_dec22,
+                "SpeX_LXD",
+                repwaves[rname],
+                psym_dec22,
+                "D22",
             )
+
         elif "IRS" in rname:
-            oexts = get_alav(exts_gor21, "IRS", repwaves[rname])
-            xvals = rvs_gor21[:, 0]
-            xvals_unc = rvs_gor21[:, 1]
-            yvals = oexts[:, 0]
-            yvals_unc = oexts[:, 1]
-            avfrac = avs_gor21[:, 1] / avs_gor21[:, 0]
-            ax[i].errorbar(
-                rvs_gor21[:, 0],
-                oexts[:, 0],
-                xerr=xvals_unc,
-                yerr=yvals_unc,
-                fmt=psym_gor21,
-                fillstyle="none",
-                label="G21",
+            xvals, xvals_unc, yvals, yvals_unc, avfrac = plot_exts(
+                exts_gor21,
+                rvs_gor21,
+                avs_gor21,
+                "IRS",
+                repwaves[rname],
+                psym_gor21,
+                "G21",
             )
+
         elif "IUE" in rname:
-            oexts = get_alav(exts_gor09, "IUE", repwaves[rname])
-            xvals = rvs_gor09[:, 0]
-            yvals = oexts[:, 0]
-            ax[i].plot(
-                rvs_gor09[:, 0], oexts[:, 0], psym_gor09, fillstyle="none", label="G09"
+            xvals1, xvals1_unc, yvals1, yvals1_unc, avfrac1 = plot_exts(
+                exts_gor09,
+                rvs_gor09,
+                avs_gor09,
+                "IUE",
+                repwaves[rname],
+                psym_gor09,
+                "G09",
             )
-            oexts = get_alav(exts_fit19, "STIS", repwaves[rname])
-            xvals = np.append(xvals, rvs_fit19[:, 0])
-            yvals = np.append(yvals, oexts[:, 0])
-            ax[i].plot(
-                rvs_fit19[:, 0], oexts[:, 0], psym_fit19, fillstyle="none", label="F19"
+            xvals2, xvals2_unc, yvals2, yvals2_unc, avfrac2 = plot_exts(
+                exts_fit19,
+                rvs_fit19,
+                avs_fit19,
+                "STIS",
+                repwaves[rname],
+                psym_fit19,
+                "F19",
             )
-            oexts = get_alav(exts_gor21, "IUE", repwaves[rname])
-            xvals = np.append(xvals, rvs_gor21[:, 0])
-            yvals = np.append(yvals, oexts[:, 0])
-            ax[i].plot(
-                rvs_gor21[:, 0], oexts[:, 0], psym_gor21, fillstyle="none", label="G21"
+            xvals3, xvals3_unc, yvals3, yvals3_unc, avfrac3 = plot_exts(
+                exts_gor21,
+                rvs_gor21,
+                avs_gor21,
+                "IUE",
+                repwaves[rname],
+                psym_gor21,
+                "G21",
             )
-            oexts = get_alav(exts_dec22, "IUE", repwaves[rname])
-            xvals = np.append(xvals, rvs_dec22[:, 0])
-            yvals = np.append(yvals, oexts[:, 0])
-            ax[i].plot(
-                rvs_dec22[:, 0], oexts[:, 0], psym_dec22, fillstyle="none", label="D22"
+            xvals4, xvals4_unc, yvals4, yvals4_unc, avfrac4 = plot_exts(
+                exts_dec22,
+                rvs_dec22,
+                avs_dec22,
+                "IUE",
+                repwaves[rname],
+                psym_dec22,
+                "D22",
             )
+            # xvals5, xvals5_unc, yvals5, yvals5_unc, avfrac5 = plot_exts(
+            #     exts_val04,
+            #     rvs_val04,
+            #     avs_dec22,
+            #     "IUE",
+            #     repwaves[rname],
+            #     psym_val04,
+            #     "V04",
+            # )
+            xvals = np.concatenate((xvals1, xvals2, xvals3, xvals4))
+            xvals_unc = np.concatenate((xvals1_unc, xvals2_unc, xvals3_unc, xvals4_unc))
+            yvals = np.concatenate((yvals1, yvals2, yvals3, yvals4))
+            yvals_unc = np.concatenate((yvals1_unc, yvals2_unc, yvals3_unc, yvals4_unc))
+            avfrac = np.concatenate((avfrac1, avfrac2, avfrac3, avfrac4))
+
         elif "BAND" in rname:
             oexts = get_alav(exts_val04, "BAND", repwaves[rname])
             ax[i].plot(

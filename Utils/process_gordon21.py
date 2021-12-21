@@ -13,8 +13,6 @@ if __name__ == "__main__":
         ifile = fname
         ext = ExtData(ifile)
         ext.calc_RV()
-        print(ext.columns)
-        exit()
 
         ofile = ifile.replace("gordon21/", "gor21_")
         ofile = ofile.replace("_POWLAW2DRUDE", "")

@@ -1,6 +1,7 @@
 import glob
 import numpy as np
 from scipy.io import readsav
+
 # import matplotlib.pyplot as plt
 import astropy.units as u
 
@@ -22,13 +23,23 @@ class ExtData(ExtDataStock):
 
         spec_dict = readsav(ext_filename)
 
-        self.columns["EBV"] = (spec_dict["E44MIN55"], 0.0)
+        sindxs = np.argsort(np.absolute(1.0 / spec_dict["XVALS"] - 0.55))
+        self.columns["EBV"] = (
+            spec_dict["E44MIN55"],
+            spec_dict["EXTCURV_RAW_SIG"][sindxs[0]],
+        )
 
         (indxs,) = np.where(1.0 / spec_dict["XVALS"] < 1.0)
         self.waves["STIS"] = (1.0 / spec_dict["XVALS"][indxs]) * u.micron
         self.exts["STIS"] = spec_dict["EXTCURV_RAW"][indxs]
         self.npts["STIS"] = spec_dict["EXTCURV_RAW_SIG"][indxs]
         self.uncs["STIS"] = spec_dict["EXTCURV_RAW_SIG"][indxs]
+
+        # print(self.columns["EBV"])
+        # plt.plot(self.waves["STIS"], self.exts["STIS"], label="raw")
+        # plt.plot(self.waves["STIS"], spec_dict["EXTCURV_4455"][indxs])
+        # plt.legend()
+        # plt.show()
 
         (indxs,) = np.where(1.0 / spec_dict["XVALS"] > 1.0)
         self.waves["BAND"] = (1.0 / spec_dict["XVALS"][indxs]) * u.micron
@@ -51,6 +62,7 @@ if __name__ == "__main__":
 
         # get A(V) values
         ext.calc_AV()
+        print(ifile, ext.columns["AV"])
         if "AV" in ext.columns.keys():
             ext.calc_RV()
 
