@@ -4,18 +4,69 @@ from matplotlib.ticker import ScalarFormatter
 from astropy.table import QTable
 
 
-def plot_irv_ssamp(ax, itab, label):
+def plot_irv_ssamp(ax, itab, label, color="k", simpfit=True):
     gvals = itab["npts"] > 0
     for i in range(2):
-        ax[0, i].plot(
-            itab["waves"][gvals], itab["slopes"][gvals], label=label, alpha=0.75
-        )
-        ax[1, i].plot(
-            itab["waves"][gvals], itab["intercepts"][gvals], label=label, alpha=0.75
-        )
-        ax[3, i].plot(
-            itab["waves"][gvals], itab["sigmas"][gvals], label=label, alpha=0.75
-        )
+        if simpfit:
+            ax[0, i].plot(
+                itab["waves"][gvals],
+                itab["slopes"][gvals],
+                linestyle="dashed",
+                color=color,
+                alpha=0.75,
+            )
+            ax[1, i].plot(
+                itab["waves"][gvals],
+                itab["intercepts"][gvals],
+                linestyle="dashed",
+                color=color,
+                alpha=0.75,
+            )
+            if "rmss" in itab.colnames:
+                ax[3, i].plot(
+                    itab["waves"][gvals],
+                    itab["rmss"][gvals],
+                    linestyle="dashed",
+                    color=color,
+                    alpha=0.75,
+                )
+            else:
+                ax[3, i].plot(
+                    itab["waves"][gvals],
+                    itab["sigmas"][gvals],
+                    linestyle="dashed",
+                    color=color,
+                    alpha=0.75,
+                )
+        if "hfslopes" in itab.colnames:
+            ax[0, i].plot(
+                itab["waves"][gvals],
+                itab["hfslopes"][gvals],
+                color=color,
+                label=label,
+                alpha=0.75,
+            )
+            ax[1, i].plot(
+                itab["waves"][gvals],
+                itab["hfintercepts"][gvals],
+                color=color,
+                label=label,
+                alpha=0.75,
+            )
+            ax[2, i].plot(
+                itab["waves"][gvals],
+                itab["hfsigmas"][gvals],
+                color=color,
+                label=label,
+                alpha=0.75,
+            )
+            ax[3, i].plot(
+                itab["waves"][gvals],
+                itab["hfrmss"][gvals],
+                color=color,
+                label=label,
+                alpha=0.75,
+            )
 
 
 if __name__ == "__main__":
@@ -45,17 +96,17 @@ if __name__ == "__main__":
     plt.rc("axes", linewidth=2)
     plt.rc("xtick.major", width=2)
     plt.rc("ytick.major", width=2)
-    fig, ax = plt.subplots(nrows=4, ncols=2, figsize=(16, 9), sharex="col", constrained_layout=True)
+    fig, ax = plt.subplots(nrows=4, ncols=2, figsize=(16, 9), sharex="col")
 
     # plot parameters
-    plot_irv_ssamp(ax, gor09_fuse, "G09 FUSE")
-    plot_irv_ssamp(ax, gor09_iue, "G09 IUE")
+    plot_irv_ssamp(ax, gor09_fuse, "G09 FUSE", color="blue")
+    plot_irv_ssamp(ax, gor09_iue, "G09 IUE", color="orange")
     # plot_irv_ssamp(ax, gor21_iue, "G21 IUE")
     # plot_irv_ssamp(ax, dec22_iue, "D22 IUE")
-    plot_irv_ssamp(ax, fit19_stis, "F19")
-    plot_irv_ssamp(ax, dec22_spexsxd, "D22 SpeXSXD")
-    plot_irv_ssamp(ax, dec22_spexlxd, "D22 SpeXLXD")
-    plot_irv_ssamp(ax, gor21_irs, "G21 IRS")
+    plot_irv_ssamp(ax, fit19_stis, "F19", color="green")
+    plot_irv_ssamp(ax, dec22_spexsxd, "D22 SpeXSXD", color="red")
+    plot_irv_ssamp(ax, dec22_spexlxd, "D22 SpeXLXD", color="purple")
+    plot_irv_ssamp(ax, gor21_irs, "G21 IRS", color="brown")
 
     ax[3, 0].set_xscale("log")
     ax[3, 1].set_xscale("log")
@@ -63,11 +114,13 @@ if __name__ == "__main__":
     ax[3, 0].set_xlim(0.09, 0.35)
     ax[3, 1].set_xlim(0.30, 20.0)
 
-    ax[0, 0].set_ylim(0.0, 25.0)
-    ax[1, 0].set_ylim(-2.0, 2.0)
+    ax[0, 0].set_ylim(0.0, 250.0)
+    ax[1, 0].set_ylim(-2.0, 10.0)
+    ax[2, 0].set_ylim(0.0, 7.5)
     ax[3, 0].set_ylim(0.0, 2.0)
-    ax[0, 1].set_ylim(-1.0, 3.0)
+    ax[0, 1].set_ylim(-5.0, 5.0)
     ax[1, 1].set_ylim(-0.1, 1.1)
+    ax[2, 1].set_ylim(0.0, 5.0)
     ax[3, 1].set_ylim(0.0, 0.10)
 
     ax[3, 0].set_xlabel(r"$\lambda$ [$\mu$m]")

@@ -55,14 +55,16 @@ def get_rvs(exts):
 def get_irvs(rvs):
     """
     Compute 1/rvs values (including uncs) from rvs vals
+    1/rvs have 1/3.1 subtracted for the fitting
     """
     irvs = np.zeros(rvs.shape)
     irvs[:, 0] = 1 / rvs[:, 0]
     irvs[:, 1] = irvs[:, 0] * (rvs[:, 1] / rvs[:, 0])
+    irvs[:, 0] -= 1 / 3.1
     return irvs
 
 
-def fit_allwaves(exts, src, ofilename):
+def fit_allwaves(exts, src, ofilename, hfemcee=False):
     """
     Fit all the wavelengths for a sample of curves for the specified data
     """
@@ -93,11 +95,14 @@ def fit_allwaves(exts, src, ofilename):
     hfslopes = np.zeros((nwaves))
     hfintercepts = np.zeros((nwaves))
     hfsigmas = np.zeros(nwaves)
+    hfslopes_std = np.zeros((nwaves))
+    hfintercepts_std = np.zeros((nwaves))
+    hfsigmas_std = np.zeros(nwaves)
     hfrmss = np.zeros(nwaves)
     for k in tqdm(range(nwaves), desc=src):
         rwave = poss_waves[k]
         oexts = get_alav(exts, src, rwave)
-        if np.sum(np.isfinite(oexts[:, 0])) > 5:
+        if np.sum(np.isfinite(oexts[:, 0])) > 10:
             # print(rwave)
             # regular unweighted fit
             npts[k] = np.sum(np.isfinite(oexts[:, 0]))
@@ -107,6 +112,7 @@ def fit_allwaves(exts, src, ofilename):
             fitted_line = fit(
                 line_init, xvals[gvals], yvals[gvals], weights=1.0 / yvals_unc[gvals]
             )
+            # print(fitted_line)
             slopes[k] = fitted_line.slope.value
             intercepts[k] = fitted_line.intercept.value
             rmss[k] = np.sqrt(
@@ -135,20 +141,42 @@ def fit_allwaves(exts, src, ofilename):
                 )
                 hfcov[1, 1, ll] = yvals_unc[gvals][ll] ** 2
 
+            print(hfdata)
+            print(hfcov)
+            exit()
+
             hf_fit = HFLinFit(hfdata, hfcov)
 
             # ds = 0.5 * np.absolute(fitted_line.slope)
             # di = 0.5 * np.absolute(fitted_line.intercept)
+            # ds = 5.0
+            # di = 5.0
             # bounds = (
             #     (fitted_line.slope - ds, fitted_line.slope + ds),
             #     (fitted_line.intercept - di, fitted_line.intercept + di),
             #     (1.0e-5, 5.0),
             # )
-            bounds = ((-2.0, 40.0), (-5.0, 5.0), (1.0e-5, 5.0))
-            hf_fit_params = hf_fit.optimize(bounds, verbose=False)
-            hfslopes[k] = hf_fit_params[0][0]
-            hfintercepts[k] = hf_fit_params[0][1]
-            hfsigmas[k] = hf_fit_params[1]
+            bounds = ((-30.0, 30.0), (-1.0, 20.0), (1.0e-5, 5.0))
+            if not hfemcee:
+                hf_fit_params = hf_fit.optimize(bounds, verbose=False)
+                # print(hf_fit_params)
+                hfslopes[k] = hf_fit_params[0][0]
+                hfintercepts[k] = hf_fit_params[0][1]
+                hfsigmas[k] = hf_fit_params[1]
+                # print(fitted_line)
+                # print(bounds)
+            else:
+                mcmc_samples, mcmc_lnlike = hf_fit.emcee(bounds, verbose=False)
+                # print(np.mean(mcmc_samples, axis=1), np.std(mcmc_samples, axis=1))
+                mean_params = np.mean(mcmc_samples, axis=1)
+                mean_stds = np.std(mcmc_samples, axis=1)
+                hfslopes[k] = mean_params[0]
+                hfintercepts[k] = mean_params[1]
+                hfsigmas[k] = mean_params[2]
+                hfslopes_std[k] = mean_stds[0]
+                hfintercepts_std[k] = mean_stds[1]
+                hfsigmas_std[k] = mean_stds[2]
+
             hf_modline = hfintercepts[k] + hfslopes[k] * xvals[gvals]
             hfrmss[k] = np.sqrt(
                 np.sum(np.square(yvals[gvals] - hf_modline)) / (npts[k] - 1)
@@ -165,6 +193,10 @@ def fit_allwaves(exts, src, ofilename):
     otab["hfintercepts"] = hfintercepts
     otab["hfsigmas"] = hfsigmas
     otab["hfrmss"] = hfrmss
+    if hfemcee:
+        otab["hfslopes_std"] = hfslopes_std
+        otab["hfintercepts_std"] = hfintercepts_std
+        otab["hfsigmas_std"] = hfsigmas_std
     otab.write(f"results/{ofilename}", overwrite=True)
 
     return (poss_waves, slopes, intercepts, rmss, npts)
@@ -188,15 +220,15 @@ if __name__ == "__main__":
     exts_gor09 = get_exts("gor09")
     fit_allwaves(exts_gor09, "FUSE", "gor09_fuse_irv_params.fits")
     fit_allwaves(exts_gor09, "IUE", "gor09_iue_irv_params.fits")
-
+    #
     exts_fit19 = get_exts("fit19")
     fit_allwaves(exts_fit19, "STIS", "fit19_stis_irv_params.fits")
-
-    exts_fit19 = get_exts("gor21")
-    fit_allwaves(exts_fit19, "IUE", "gor21_iue_irv_params.fits")
-    fit_allwaves(exts_fit19, "IRS", "gor21_irs_irv_params.fits")
-
+    #
+    exts_gor21 = get_exts("gor21")
+    # fit_allwaves(exts_gor21, "IUE", "gor21_iue_irv_params.fits")
+    fit_allwaves(exts_gor21, "IRS", "gor21_irs_irv_params.fits")
+    #
     exts_dec22 = get_exts("decleir22/")
-    fit_allwaves(exts_dec22, "IUE", "dec22_iue_irv_params.fits")
+    # fit_allwaves(exts_dec22, "IUE", "dec22_iue_irv_params.fits")
     fit_allwaves(exts_dec22, "SpeX_SXD", "dec22_spexsxd_irv_params.fits")
     fit_allwaves(exts_dec22, "SpeX_LXD", "dec22_spexlxd_irv_params.fits")

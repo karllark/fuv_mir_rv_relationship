@@ -2,11 +2,12 @@ import glob
 import argparse
 import matplotlib.pyplot as plt
 from matplotlib.patches import Ellipse
-from matplotlib import cm
+from matplotlib import cm, colors
 import numpy as np
 
 import astropy.units as u
-# from astropy.modeling import models, fitting
+
+from astropy.modeling import models, fitting
 
 from hyperfit.linfit import LinFit as HFLinFit
 
@@ -142,8 +143,8 @@ if __name__ == "__main__":
         rvs_fit19 = get_irvs(rvs_fit19)
         rvs_gor21 = get_irvs(rvs_gor21)
         rvs_dec22 = get_irvs(rvs_dec22)
-        labx = "$1/R(V)$"
-        xrange = [1.0 / 6.5, 1.0 / 2.0]
+        labx = "$1/R(V)$ - 1/3.1"
+        xrange = np.array([1.0 / 6.5, 1.0 / 2.0]) - 1 / 3.1
 
     laby = r"$A(\lambda)/A(V)$"
 
@@ -163,7 +164,7 @@ if __name__ == "__main__":
 
     repwaves = {
         "FUSE1": 0.1 * u.micron,
-        # "FUSE1": 0.09394144266843796 * u.micron,
+        # "FUSE1": 0.09042863547801971 * u.micron,
         "IUE1": 0.15 * u.micron,
         "IUE2": 0.2175 * u.micron,
         # "IUE3": 0.3 * u.micron,
@@ -316,16 +317,14 @@ if __name__ == "__main__":
 
         # fit a line
         if xvals is not None:
-            # fit = fitting.LinearLSQFitter()
-            # line_init = models.Linear1D()
+            fit = fitting.LinearLSQFitter()
+            line_init = models.Linear1D()
             gvals = np.isfinite(yvals)
-            # fitted_line = fit(
-            #     line_init, xvals[gvals], yvals[gvals], weights=1.0 / yvals_unc[gvals]
-            # )
-            # print(fitted_line)
-            #
+            fitted_line = fit(
+                line_init, xvals[gvals], yvals[gvals], weights=1.0 / yvals_unc[gvals]
+            )
             mod_xvals = np.array(xrange)
-            # ax[i].plot(mod_xvals, fitted_line(mod_xvals), "k-", label="Fit")
+            ax[i].plot(mod_xvals, fitted_line(mod_xvals), "k-", label="Fit")
 
             # print(fitted_line)
 
@@ -355,14 +354,22 @@ if __name__ == "__main__":
 
                 # ds = 0.5 * np.absolute(fitted_line.slope)
                 # di = 0.5 * np.absolute(fitted_line.intercept)
-                # bounds = (
-                #     (fitted_line.slope - ds, fitted_line.slope + ds),
-                #     (fitted_line.intercept - di, fitted_line.intercept + di),
-                #     (1.0e-5, 5.0),
-                # )
-                bounds = ((-2.0, 40.0), (-5.0, 5.0), (1.0e-5, 5.0))
-                hf_fit_params = hf_fit.optimize(bounds, verbose=False)
-                mod_yvals_hf = hf_fit.coords[1] + hf_fit.coords[0] * mod_xvals
+                ds = 5.0
+                di = 5.0
+                bounds = (
+                    (fitted_line.slope - ds, fitted_line.slope + ds),
+                    (fitted_line.intercept - di, fitted_line.intercept + di),
+                    (1.0e-5, 5.0),
+                )
+                # print(bounds)
+                # bounds = ((-2.0, 50.0), (-5.0, 30.0), (1.0e-5, 5.0))
+                # hf_fit_params = hf_fit.optimize(bounds, verbose=False)
+                mcmc_samples, mcmc_lnlike = hf_fit.emcee(bounds, verbose=False)
+                print(np.mean(mcmc_samples, axis=1), np.std(mcmc_samples, axis=1))
+                mean_params = np.mean(mcmc_samples, axis=1)
+                mean_stds = np.std(mcmc_samples, axis=1)
+                # mod_yvals_hf = hf_fit.coords[1] + hf_fit.coords[0] * mod_xvals
+                mod_yvals_hf = mean_params[1] + mean_params[0] * mod_xvals
                 ax[i].plot(mod_xvals, mod_yvals_hf, "k--", label="HF Fit")
 
                 ax[i].plot(mod_xvals, mod_yvals_hf - hf_fit.vert_scat, "k:")
@@ -380,7 +387,7 @@ if __name__ == "__main__":
                         height=2 * yvals_unc[gvals][k],
                         # angle=0.0,
                         alpha=0.20,
-                        color=cm.viridis(sigmas[k] / np.amax(sigmas))[0],
+                        color=cm.viridis(sigmas[k] / 3.0)[0],
                         # edgecolor="k",
                         angle=90.0 - np.rad2deg(np.arccos(corr_xy[k])),
                         # angle=np.rad2deg(corr_xy[k] * 45.0 * np.pi / 180.0),
@@ -391,8 +398,9 @@ if __name__ == "__main__":
     fax[0, 1].set_xlim(xrange)
 
     # for 2nd x-axis with R(V) values
-    new_ticks = np.array([1.0 / 2.0, 1.0 / 3.0, 1.0 / 4.0, 1.0 / 5.0, 1.0 / 6.0])
-    new_ticks_labels = ["%.1f" % z for z in 1.0 / new_ticks]
+    axis_rvs = np.array([2.0, 3.0, 4.0, 5.0, 6.0])
+    new_ticks = 1 / axis_rvs - 1 / 3.1
+    new_ticks_labels = ["%.1f" % z for z in axis_rvs]
 
     for i in range(4):
         fax[1, i].set_xlabel(labx)
@@ -407,6 +415,18 @@ if __name__ == "__main__":
 
     for i in range(2):
         fax[i, 0].set_ylabel(laby)
+
+    # Add the colourbar
+    cb = fig.colorbar(
+        cm.ScalarMappable(
+            norm=colors.Normalize(vmin=0.0, vmax=3.0), cmap=cm.viridis
+        ),
+        ax=ax,
+        shrink=0.55,
+        aspect=10,
+        anchor=(-7.1, 0.95),
+    )
+    cb.set_label(label=r"$\sigma$", fontsize=14)
 
     fig.tight_layout()
 
