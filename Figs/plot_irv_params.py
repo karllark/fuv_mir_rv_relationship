@@ -114,13 +114,13 @@ if __name__ == "__main__":
     ax[3, 0].set_xlim(0.09, 0.35)
     ax[3, 1].set_xlim(0.30, 20.0)
 
-    ax[0, 0].set_ylim(0.0, 250.0)
-    ax[1, 0].set_ylim(-2.0, 10.0)
-    ax[2, 0].set_ylim(0.0, 7.5)
+    ax[0, 0].set_ylim(0.0, 50.0)
+    ax[1, 0].set_ylim(-2.0, 7.5)
+    ax[2, 0].set_ylim(0.0, 2.0)
     ax[3, 0].set_ylim(0.0, 2.0)
-    ax[0, 1].set_ylim(-5.0, 5.0)
+    ax[0, 1].set_ylim(-2.0, 5.0)
     ax[1, 1].set_ylim(-0.1, 1.1)
-    ax[2, 1].set_ylim(0.0, 5.0)
+    ax[2, 1].set_ylim(0.0, 0.2)
     ax[3, 1].set_ylim(0.0, 0.10)
 
     ax[3, 0].set_xlabel(r"$\lambda$ [$\mu$m]")

@@ -23,15 +23,23 @@ def plot_exts(exts, rvs, avs, ctype, cwave, psym, label):
     yvals = oexts[:, 0]
     yvals_unc = oexts[:, 1]
     avfrac = avs[:, 1] / avs[:, 0]
-    ax[i].errorbar(
+    ax[i].plot(
         rvs[:, 0],
         oexts[:, 0],
-        xerr=xvals_unc,
-        yerr=yvals_unc,
-        fmt=psym,
+        psym,
         fillstyle="none",
         label=label,
+        alpha=0.75,
     )
+    # ax[i].errorbar(
+    #     rvs[:, 0],
+    #     oexts[:, 0],
+    #     xerr=xvals_unc,
+    #     yerr=yvals_unc,
+    #     fmt=psym,
+    #     fillstyle="none",
+    #     label=label,
+    # )
     return (xvals, xvals_unc, yvals, yvals_unc, avfrac)
 
 
@@ -174,7 +182,7 @@ if __name__ == "__main__":
         # "BAND2": 2.1 * u.micron,
         "SpeX_SXD1": 1.65 * u.micron,
         "SpeX_LXD1": 3.5 * u.micron,
-        "IRS1": 15.0 * u.micron,
+        "IRS1": 10.0 * u.micron,
     }
 
     for i, rname in enumerate(repwaves.keys()):
@@ -324,7 +332,7 @@ if __name__ == "__main__":
                 line_init, xvals[gvals], yvals[gvals], weights=1.0 / yvals_unc[gvals]
             )
             mod_xvals = np.array(xrange)
-            ax[i].plot(mod_xvals, fitted_line(mod_xvals), "k-", label="Fit")
+            ax[i].plot(mod_xvals, fitted_line(mod_xvals), "k:", label="Fit", alpha=0.75)
 
             # print(fitted_line)
 
@@ -370,10 +378,10 @@ if __name__ == "__main__":
                 mean_stds = np.std(mcmc_samples, axis=1)
                 # mod_yvals_hf = hf_fit.coords[1] + hf_fit.coords[0] * mod_xvals
                 mod_yvals_hf = mean_params[1] + mean_params[0] * mod_xvals
-                ax[i].plot(mod_xvals, mod_yvals_hf, "k--", label="HF Fit")
+                ax[i].plot(mod_xvals, mod_yvals_hf, "k-", label="HF Fit")
 
-                ax[i].plot(mod_xvals, mod_yvals_hf - hf_fit.vert_scat, "k:")
-                ax[i].plot(mod_xvals, mod_yvals_hf + hf_fit.vert_scat, "k:")
+                ax[i].plot(mod_xvals, mod_yvals_hf - hf_fit.vert_scat, "k--")
+                ax[i].plot(mod_xvals, mod_yvals_hf + hf_fit.vert_scat, "k--")
 
                 # print(hf_fit_params)
 
@@ -418,13 +426,12 @@ if __name__ == "__main__":
 
     # Add the colourbar
     cb = fig.colorbar(
-        cm.ScalarMappable(
-            norm=colors.Normalize(vmin=0.0, vmax=3.0), cmap=cm.viridis
-        ),
-        ax=ax,
-        shrink=0.55,
+        cm.ScalarMappable(norm=colors.Normalize(vmin=0.0, vmax=3.0), cmap=cm.viridis),
+        ax=fax[0, 3],
+        shrink=0.5,
+        alpha=0.5,
         aspect=10,
-        anchor=(-7.1, 0.95),
+        # anchor=(0.0, 0.95),
     )
     cb.set_label(label=r"$\sigma$", fontsize=14)
 

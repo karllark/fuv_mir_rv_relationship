@@ -107,7 +107,7 @@ def fit_allwaves(exts, src, ofilename, hfemcee=False):
             # regular unweighted fit
             npts[k] = np.sum(np.isfinite(oexts[:, 0]))
             yvals = oexts[:, 0]
-            yvals_unc = oexts[:, 0]
+            yvals_unc = oexts[:, 1]
             gvals = np.isfinite(yvals)
             fitted_line = fit(
                 line_init, xvals[gvals], yvals[gvals], weights=1.0 / yvals_unc[gvals]
@@ -141,9 +141,9 @@ def fit_allwaves(exts, src, ofilename, hfemcee=False):
                 )
                 hfcov[1, 1, ll] = yvals_unc[gvals][ll] ** 2
 
-            print(hfdata)
-            print(hfcov)
-            exit()
+            # print(hfdata)
+            # print(hfcov)
+            # exit()
 
             hf_fit = HFLinFit(hfdata, hfcov)
 
