@@ -144,7 +144,7 @@ if __name__ == "__main__":
 
     if args.rv:
         labx = "$R(V)$"
-        xrange = [2.0, 6.5]
+        xrange = [2.25, 6.5]
     else:
         rvs_val04 = get_irvs(rvs_val04)
         rvs_gor09 = get_irvs(rvs_gor09)
@@ -152,7 +152,8 @@ if __name__ == "__main__":
         rvs_gor21 = get_irvs(rvs_gor21)
         rvs_dec22 = get_irvs(rvs_dec22)
         labx = "$1/R(V)$ - 1/3.1"
-        xrange = np.array([1.0 / 6.5, 1.0 / 2.0]) - 1 / 3.1
+        # xrange = np.array([1.0 / 6.5, 1.0 / 2.0]) - 1 / 3.1
+        xrange = np.array([1.0 / 6.5, 1.0 / 2.25]) - 1 / 3.1
 
     laby = r"$A(\lambda)/A(V)$"
 
@@ -407,12 +408,12 @@ if __name__ == "__main__":
     fax[0, 1].set_xlim(xrange)
 
     # for 2nd x-axis with R(V) values
-    axis_rvs = np.array([2.0, 3.0, 4.0, 5.0, 6.0])
+    axis_rvs = np.array([2.3, 2.5, 3.0, 4.0, 5.0, 6.0])
     new_ticks = 1 / axis_rvs - 1 / 3.1
     new_ticks_labels = ["%.1f" % z for z in axis_rvs]
 
     for i in range(3):
-        fax[1, i].set_xlabel(labx)
+        fax[2, i].set_xlabel(labx)
 
         if not args.rv:
             # add 2nd x-axis with R(V) values
@@ -434,7 +435,7 @@ if __name__ == "__main__":
         aspect=10,
         anchor=(-4.7, 0.85),
     )
-    cb.set_label(label=r"$\sigma$", fontsize=14)
+    cb.set_label(label=r"$\sigma$ offset", fontsize=14)
 
     fig.tight_layout()
 

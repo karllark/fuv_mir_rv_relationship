@@ -65,6 +65,7 @@ if __name__ == "__main__":
         # get A(V) values
         ext.calc_AV_JHK()
         print(ifile, ext.columns["AV"])
+
         if "AV" in ext.columns.keys():
             ext.calc_RV()
 

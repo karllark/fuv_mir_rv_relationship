@@ -36,9 +36,9 @@ Figures
 1. A(V) versus R(V): python Figs/plot_samp_prop.py
   - also computes n_sightlines, A(V), R(V), and sample overlaps
 
-1. 1/R(V) relationship at representative wavelengths: python Figs/plot_rep_waves.py
+2. 1/R(V) relationship at representative wavelengths: python Figs/plot_rep_waves.py
 
-2. Fit parameters versus 1/R(V): python Figs/plot_irv_params.py
+3. Fit parameters versus 1/R(V): python Figs/plot_irv_params.py
 
 Tables
 ------

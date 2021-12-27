@@ -112,7 +112,7 @@ if __name__ == "__main__":
     ax[3, 1].set_xscale("log")
 
     ax[3, 0].set_xlim(0.09, 0.35)
-    ax[3, 1].set_xlim(0.35, 20.0)
+    ax[3, 1].set_xlim(0.35, 30.0)
 
     ax[0, 0].set_ylim(0.0, 50.0)
     ax[1, 0].set_ylim(1.0, 7.5)
