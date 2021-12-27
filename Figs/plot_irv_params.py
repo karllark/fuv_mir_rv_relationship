@@ -4,7 +4,7 @@ from matplotlib.ticker import ScalarFormatter
 from astropy.table import QTable
 
 
-def plot_irv_ssamp(ax, itab, label, color="k", simpfit=True):
+def plot_irv_ssamp(ax, itab, label, color="k", simpfit=False):
     gvals = itab["npts"] > 0
     for i in range(2):
         if simpfit:
@@ -89,14 +89,14 @@ if __name__ == "__main__":
     dec22_spexlxd = QTable.read("results/dec22_spexlxd_irv_params.fits")
 
     # setup plot
-    fontsize = 12
+    fontsize = 14
     font = {"size": fontsize}
     plt.rc("font", **font)
     plt.rc("lines", linewidth=1.5)
     plt.rc("axes", linewidth=2)
     plt.rc("xtick.major", width=2)
     plt.rc("ytick.major", width=2)
-    fig, ax = plt.subplots(nrows=4, ncols=2, figsize=(16, 9), sharex="col")
+    fig, ax = plt.subplots(nrows=4, ncols=2, figsize=(16, 12), sharex="col")
 
     # plot parameters
     plot_irv_ssamp(ax, gor09_fuse, "G09 FUSE", color="blue")
@@ -112,15 +112,16 @@ if __name__ == "__main__":
     ax[3, 1].set_xscale("log")
 
     ax[3, 0].set_xlim(0.09, 0.35)
-    ax[3, 1].set_xlim(0.30, 20.0)
+    ax[3, 1].set_xlim(0.35, 20.0)
 
     ax[0, 0].set_ylim(0.0, 50.0)
-    ax[1, 0].set_ylim(-2.0, 7.5)
-    ax[2, 0].set_ylim(0.0, 2.0)
+    ax[1, 0].set_ylim(1.0, 7.5)
+    ax[2, 0].set_ylim(0.0, 1.5)
     ax[3, 0].set_ylim(0.0, 2.0)
     ax[0, 1].set_ylim(-2.0, 5.0)
-    ax[1, 1].set_ylim(-0.1, 1.1)
-    ax[2, 1].set_ylim(0.0, 0.2)
+    ax[1, 1].set_yscale("log")
+    ax[1, 1].set_ylim(0.01, 2.0)
+    ax[2, 1].set_ylim(0.0, 0.1)
     ax[3, 1].set_ylim(0.0, 0.10)
 
     ax[3, 0].set_xlabel(r"$\lambda$ [$\mu$m]")

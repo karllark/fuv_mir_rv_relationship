@@ -167,7 +167,7 @@ if __name__ == "__main__":
     plt.rc("xtick.major", width=2)
     plt.rc("ytick.major", width=2)
 
-    fig, fax = plt.subplots(nrows=2, ncols=4, figsize=(17, 8), sharex=True)
+    fig, fax = plt.subplots(nrows=3, ncols=3, figsize=(12, 12), sharex=True)
     ax = fax.flatten()
 
     repwaves = {
@@ -183,6 +183,7 @@ if __name__ == "__main__":
         "SpeX_SXD1": 1.65 * u.micron,
         "SpeX_LXD1": 3.5 * u.micron,
         "IRS1": 10.0 * u.micron,
+        "IRS2": 15.0 * u.micron,
     }
 
     for i, rname in enumerate(repwaves.keys()):
@@ -410,7 +411,7 @@ if __name__ == "__main__":
     new_ticks = 1 / axis_rvs - 1 / 3.1
     new_ticks_labels = ["%.1f" % z for z in axis_rvs]
 
-    for i in range(4):
+    for i in range(3):
         fax[1, i].set_xlabel(labx)
 
         if not args.rv:
@@ -421,17 +422,17 @@ if __name__ == "__main__":
             tax.set_xticklabels(new_ticks_labels)
             tax.set_xlabel(r"$R(V)$")
 
-    for i in range(2):
+    for i in range(3):
         fax[i, 0].set_ylabel(laby)
 
     # Add the colourbar
     cb = fig.colorbar(
         cm.ScalarMappable(norm=colors.Normalize(vmin=0.0, vmax=3.0), cmap=cm.viridis),
-        ax=fax[0, 3],
-        shrink=0.5,
+        ax=fax,
+        shrink=0.12,
         alpha=0.5,
         aspect=10,
-        # anchor=(0.0, 0.95),
+        anchor=(-4.7, 0.85),
     )
     cb.set_label(label=r"$\sigma$", fontsize=14)
 

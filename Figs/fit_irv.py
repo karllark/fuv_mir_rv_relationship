@@ -102,7 +102,7 @@ def fit_allwaves(exts, src, ofilename, hfemcee=False):
     for k in tqdm(range(nwaves), desc=src):
         rwave = poss_waves[k]
         oexts = get_alav(exts, src, rwave)
-        if np.sum(np.isfinite(oexts[:, 0])) > 10:
+        if np.sum(np.isfinite(oexts[:, 0])) > 5:
             # print(rwave)
             # regular unweighted fit
             npts[k] = np.sum(np.isfinite(oexts[:, 0]))
