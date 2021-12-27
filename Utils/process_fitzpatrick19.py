@@ -7,6 +7,8 @@ import astropy.units as u
 
 from measure_extinction.extdata import ExtData as ExtDataStock
 
+# from dust_extinction.averages import RRP89_MWGC
+
 
 class ExtData(ExtDataStock):
     """
@@ -23,7 +25,7 @@ class ExtData(ExtDataStock):
 
         spec_dict = readsav(ext_filename)
 
-        sindxs = np.argsort(np.absolute(1.0 / spec_dict["XVALS"] - 0.55))
+        sindxs = np.argsort(np.absolute(1.0 / spec_dict["XVALS"] - 0.44))
         self.columns["EBV"] = (
             spec_dict["E44MIN55"],
             spec_dict["EXTCURV_RAW_SIG"][sindxs[0]],
@@ -61,7 +63,7 @@ if __name__ == "__main__":
         ext.read_ext_data_idlsave(ifile)
 
         # get A(V) values
-        ext.calc_AV()
+        ext.calc_AV_JHK()
         print(ifile, ext.columns["AV"])
         if "AV" in ext.columns.keys():
             ext.calc_RV()
