@@ -217,18 +217,18 @@ def get_exts(sampstr):
 
 if __name__ == "__main__":
 
-    # exts_gor09 = get_exts("gor09")
-    # fit_allwaves(exts_gor09, "FUSE", "gor09_fuse_irv_params.fits")
-    # fit_allwaves(exts_gor09, "IUE", "gor09_iue_irv_params.fits")
+    exts_gor09 = get_exts("gor09")
+    fit_allwaves(exts_gor09, "FUSE", "gor09_fuse_irv_params.fits")
+    fit_allwaves(exts_gor09, "IUE", "gor09_iue_irv_params.fits")
     #
     # exts_fit19 = get_exts("fit19")
     # fit_allwaves(exts_fit19, "STIS", "fit19_stis_irv_params.fits")
-    #
+    # #
     # exts_gor21 = get_exts("gor21")
     # fit_allwaves(exts_gor21, "IUE", "gor21_iue_irv_params.fits")
     # fit_allwaves(exts_gor21, "IRS", "gor21_irs_irv_params.fits")
-    #
-    exts_dec22 = get_exts("decleir22/")
+    # #
+    # exts_dec22 = get_exts("decleir22/")
     # fit_allwaves(exts_dec22, "IUE", "dec22_iue_irv_params.fits")
-    fit_allwaves(exts_dec22, "SpeX_SXD", "dec22_spexsxd_irv_params.fits")
-    fit_allwaves(exts_dec22, "SpeX_LXD", "dec22_spexlxd_irv_params.fits")
+    # fit_allwaves(exts_dec22, "SpeX_SXD", "dec22_spexsxd_irv_params.fits")
+    # fit_allwaves(exts_dec22, "SpeX_LXD", "dec22_spexlxd_irv_params.fits")

@@ -11,6 +11,7 @@ if __name__ == "__main__":
 
     for fname in files:
         ifile = fname.replace("_bin", "")
+        # ifile = fname
         ext = ExtData(ifile)
 
         # convert from A(lambda)/A(V) back to original E(lambda-V)
