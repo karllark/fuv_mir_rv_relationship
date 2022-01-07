@@ -130,6 +130,8 @@ if __name__ == "__main__":
     dec22_spexsxd = QTable.read("results/dec22_spexsxd_irv_params.fits")
     dec22_spexlxd = QTable.read("results/dec22_spexlxd_irv_params.fits")
 
+    aiue_iue = QTable.read("results/aiue_iue_irv_params.fits")
+
     # setup plot
     fontsize = 14
     font = {"size": fontsize}
@@ -153,25 +155,29 @@ if __name__ == "__main__":
     )
 
     gor09_color = "blue"
-    fit19_color = "cyan"
+    fit19_color = "green"
     dec22_color = "red"
     dec22_color = "red"
     gor21_color = "purple"
+    aiue_color = "black"
 
     # plot parameters
     if args.wavereg == "uv":
         gor09_res1 = plot_irv_ssamp(ax, gor09_fuse, "G09", color=gor09_color)
         gor09_res2 = plot_irv_ssamp(
-            ax, gor09_iue, None, color=gor09_color, inst="IUE"
+            ax, gor09_iue, None, color=gor09_color, inst="IUE", linestyle="dashed"
         )
         gor21_res = plot_irv_ssamp(
-            ax, gor21_iue, "G21", color=gor21_color, inst="IUE"
+            ax, gor21_iue, "G21", color=gor21_color, inst="IUE",
         )
         dec22_res = plot_irv_ssamp(
             ax, dec22_iue, "D22", color=dec22_color, inst="IUE"
         )
         fit19_res = plot_irv_ssamp(
             ax, fit19_stis, "F19", color=fit19_color, inst="STIS"
+        )
+        fit19_res = plot_irv_ssamp(
+            ax, aiue_iue, "All", color=aiue_color, inst="IUE"
         )
         xrange = [0.09, 0.32]
         yrange_a_type = "linear"
