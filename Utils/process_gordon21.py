@@ -1,5 +1,4 @@
 import glob
-# import numpy as np
 
 from measure_extinction.extdata import ExtData
 
@@ -13,6 +12,8 @@ if __name__ == "__main__":
         ifile = fname
         ext = ExtData(ifile)
         ext.calc_RV()
+
+        # no rebin as resolution is below 500 already
 
         ofile = ifile.replace("gordon21/", "gor21_")
         ofile = ofile.replace("_POWLAW2DRUDE", "")

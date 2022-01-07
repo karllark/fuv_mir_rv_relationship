@@ -1,11 +1,12 @@
 import glob
 import numpy as np
+import matplotlib.pyplot as plt
 from scipy.io import readsav
 
-# import matplotlib.pyplot as plt
 import astropy.units as u
 
 from measure_extinction.extdata import ExtData as ExtDataStock
+from rebin_extdata import rebin_extdata
 
 # from dust_extinction.averages import RRP89_MWGC
 
@@ -71,6 +72,9 @@ if __name__ == "__main__":
 
             ext.type = "elx"
             ext.type_rel_band = "V"
+
+            src = "STIS"
+            next = rebin_extdata(ext, src, np.array([0.100, 1.05]) * u.micron, 500.)
 
             ofile = ifile.replace("fitzpatrick19/", "fit19_")
             ofile = ofile.replace("_extcrv.save", "_ext.fits")

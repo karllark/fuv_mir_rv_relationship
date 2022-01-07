@@ -1,7 +1,12 @@
 import glob
-# import numpy as np
+import numpy as np
+import astropy.units as u
+# import matplotlib.pyplot as plt
 
 from measure_extinction.extdata import ExtData
+
+from rebin_extdata import rebin_extdata
+
 
 if __name__ == "__main__":
 
@@ -34,6 +39,9 @@ if __name__ == "__main__":
 
         ext.type = "elx"
         ext.type_rel_band = "V"
+
+        next = rebin_extdata(ext, "FUSE", np.array([0.09, 0.120]) * u.micron, 500.)
+        next = rebin_extdata(next, "IUE", np.array([0.100, 0.35]) * u.micron, 500.)
 
         ofile = ifile.replace("gordon09/", "gor09_")
         ext.save(ofile)
