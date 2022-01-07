@@ -192,7 +192,7 @@ class G21mod(Fittable1DModel):
         return axav
 
 
-def plot_irv_ssamp(ax, itab, label, color="k", simpfit=False, inst=None):
+def plot_irv_ssamp(ax, itab, label, color="k", simpfit=False, inst=None, ncol=2):
 
     # remove bad regions
     bregions = np.array([[1190.0, 1235.0], [1370.0, 1408.0], [1515.0, 1563.0]]) * u.AA
@@ -218,7 +218,7 @@ def plot_irv_ssamp(ax, itab, label, color="k", simpfit=False, inst=None):
     itab["hfsigmas"][bvals] = np.NAN
     itab["hfrmss"][bvals] = np.NAN
     gvals = itab["npts"] >= 0
-    for i in range(2):
+    for i in range(ncol):
         if simpfit:
             ax[1, i].plot(
                 itab["waves"][gvals],
