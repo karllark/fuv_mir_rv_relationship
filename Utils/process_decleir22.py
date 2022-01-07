@@ -16,14 +16,14 @@ if __name__ == "__main__":
     for fname in files:
         ifile = fname
         ext = ExtData(ifile)
-        ext.calc_RV()
 
         next = rebin_extdata(ext, "SpeX_SXD", np.array([0.8, 2.5]) * u.micron, 500.)
         next = rebin_extdata(next, "SpeX_LXD", np.array([2.0, 5.5]) * u.micron, 500.)
+        next = rebin_extdata(next, "IUE", np.array([0.100, 0.35]) * u.micron, 500.0)
 
         # plt.plot(ext.waves[src], ext.exts[src], "k-")
         # plt.plot(next.waves[src], next.exts[src], "r-")
         # plt.show()
 
         ofile = ifile.replace("decleir22/", "dec22_")
-        ext.save(ofile)
+        next.save(ofile)

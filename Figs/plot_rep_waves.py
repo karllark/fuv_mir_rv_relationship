@@ -52,25 +52,25 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # read in all the extinction curves
-    files_val04 = glob.glob("data/val04*.fits")
-    exts_val04 = [ExtData(cfile) for cfile in files_val04]
-    psym_val04 = "go"
-
-    files_gor09 = glob.glob("data/gor09*.fits")
-    exts_gor09 = [ExtData(cfile) for cfile in files_gor09]
-    psym_gor09 = "bs"
+    # files_val04 = glob.glob("data/val04*.fits")
+    # exts_val04 = [ExtData(cfile) for cfile in files_val04]
+    # psym_val04 = "go"
 
     files_fit19 = glob.glob("data/fit19*.fits")
     exts_fit19 = [ExtData(cfile) for cfile in files_fit19]
     psym_fit19 = "cv"
 
+    files_dec22 = glob.glob("data/dec22*.fits")
+    exts_dec22 = [ExtData(cfile) for cfile in files_dec22]
+    psym_dec22 = "r>"
+
+    files_gor09 = glob.glob("data/gor09*.fits")
+    exts_gor09 = [ExtData(cfile) for cfile in files_gor09]
+    psym_gor09 = "bs"
+
     files_gor21 = glob.glob("data/gor21*.fits")
     exts_gor21 = [ExtData(cfile) for cfile in files_gor21]
     psym_gor21 = "m^"
-
-    files_dec22 = glob.glob("data/decleir22/*.fits")
-    exts_dec22 = [ExtData(cfile) for cfile in files_dec22]
-    psym_dec22 = "r>"
 
     # get R(V) values
     n_gor09 = len(files_gor09)
@@ -87,18 +87,18 @@ if __name__ == "__main__":
 
         iext.trans_elv_alav()
 
-    n_val04 = len(files_val04)
-    rvs_val04 = np.zeros((n_val04, 2))
-    avs_val04 = np.zeros((n_val04, 2))
-    for i, iext in enumerate(exts_val04):
-        av = iext.columns["AV"]
-        avs_val04[i, 0] = av[0]
-        avs_val04[i, 1] = av[1]
-
-        irv = iext.columns["RV"]
-        rvs_val04[i, 0] = irv[0]
-        rvs_val04[i, 1] = irv[1]
-        iext.trans_elv_alav()
+    # n_val04 = len(files_val04)
+    # rvs_val04 = np.zeros((n_val04, 2))
+    # avs_val04 = np.zeros((n_val04, 2))
+    # for i, iext in enumerate(exts_val04):
+    #     av = iext.columns["AV"]
+    #     avs_val04[i, 0] = av[0]
+    #     avs_val04[i, 1] = av[1]
+    #
+    #     irv = iext.columns["RV"]
+    #     rvs_val04[i, 0] = irv[0]
+    #     rvs_val04[i, 1] = irv[1]
+    #     iext.trans_elv_alav()
 
     # get R(V) values
     n_fit19 = len(files_fit19)
@@ -113,6 +113,12 @@ if __name__ == "__main__":
         rvs_fit19[i, 0] = irv[0]
         rvs_fit19[i, 1] = irv[1]
         iext.trans_elv_alav()
+
+        # plt.plot(iext.waves["STIS"], iext.exts["STIS"])
+        # plt.plot(iext.waves["STIS"], iext.npts["STIS"])
+        # plt.show()
+        # print(iext.exts["STIS"])
+        # exit()
 
     # get R(V) values
     n_gor21 = len(files_gor21)
@@ -146,7 +152,7 @@ if __name__ == "__main__":
         labx = "$R(V)$"
         xrange = [2.25, 6.5]
     else:
-        rvs_val04 = get_irvs(rvs_val04)
+        # rvs_val04 = get_irvs(rvs_val04)
         rvs_gor09 = get_irvs(rvs_gor09)
         rvs_fit19 = get_irvs(rvs_fit19)
         rvs_gor21 = get_irvs(rvs_gor21)
@@ -168,7 +174,9 @@ if __name__ == "__main__":
     plt.rc("xtick.major", width=2)
     plt.rc("ytick.major", width=2)
 
-    fig, fax = plt.subplots(nrows=3, ncols=3, figsize=(12, 12), sharex=True)
+    fig, fax = plt.subplots(
+        nrows=3, ncols=3, figsize=(12, 12), sharex=True,  # constrained_layout=True
+    )
     ax = fax.flatten()
 
     repwaves = {
@@ -193,6 +201,8 @@ if __name__ == "__main__":
         xvals_unc = None
         yvals_unc = None
         avfrac = None
+
+        print(rname)
 
         if "FUSE" in rname:
             xvals, xvals_unc, yvals, yvals_unc, avfrac = plot_exts(
@@ -302,15 +312,15 @@ if __name__ == "__main__":
             avfrac = np.concatenate((avfrac1, avfrac2, avfrac3, avfrac4))
 
         elif "BAND" in rname:
-            oexts = get_alav(exts_val04, "BAND", repwaves[rname])
-            ax[i].plot(
-                rvs_val04[:, 0],
-                oexts[:, 0],
-                psym_val04,
-                fillstyle="none",
-                alpha=0.5,
-                label="V04",
-            )
+            # oexts = get_alav(exts_val04, "BAND", repwaves[rname])
+            # ax[i].plot(
+            #     rvs_val04[:, 0],
+            #     oexts[:, 0],
+            #     psym_val04,
+            #     fillstyle="none",
+            #     alpha=0.5,
+            #     label="V04",
+            # )
             oexts = get_alav(exts_gor09, "BAND", repwaves[rname])
             ax[i].plot(
                 rvs_gor09[:, 0], oexts[:, 0], psym_gor09, fillstyle="none", label="G09"
@@ -364,15 +374,16 @@ if __name__ == "__main__":
 
                 # ds = 0.5 * np.absolute(fitted_line.slope)
                 # di = 0.5 * np.absolute(fitted_line.intercept)
-                ds = 5.0
-                di = 5.0
-                bounds = (
-                    (fitted_line.slope - ds, fitted_line.slope + ds),
-                    (fitted_line.intercept - di, fitted_line.intercept + di),
-                    (1.0e-5, 5.0),
-                )
+                # ds = 5.0
+                # di = 5.0
+                # bounds = (
+                #     (fitted_line.slope - ds, fitted_line.slope + ds),
+                #     (fitted_line.intercept - di, fitted_line.intercept + di),
+                #     (1.0e-5, 5.0),
+                # )
                 # print(bounds)
                 # bounds = ((-2.0, 50.0), (-5.0, 30.0), (1.0e-5, 5.0))
+                bounds = ((-5.0, 30.0), (-1.0, 20.0), (1.0e-5, 5.0))
                 # hf_fit_params = hf_fit.optimize(bounds, verbose=False)
                 mcmc_samples, mcmc_lnlike = hf_fit.emcee(bounds, verbose=False)
                 print(np.mean(mcmc_samples, axis=1), np.std(mcmc_samples, axis=1))

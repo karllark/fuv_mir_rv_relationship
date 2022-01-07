@@ -1,6 +1,6 @@
 import glob
 import numpy as np
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 from scipy.io import readsav
 
 import astropy.units as u
@@ -35,7 +35,7 @@ class ExtData(ExtDataStock):
         (indxs,) = np.where(1.0 / spec_dict["XVALS"] < 1.0)
         self.waves["STIS"] = (1.0 / spec_dict["XVALS"][indxs]) * u.micron
         self.exts["STIS"] = spec_dict["EXTCURV_RAW"][indxs]
-        self.npts["STIS"] = spec_dict["EXTCURV_RAW_SIG"][indxs]
+        self.npts["STIS"] = np.full((len(indxs)), 1)
         self.uncs["STIS"] = spec_dict["EXTCURV_RAW_SIG"][indxs]
 
         # print(self.columns["EBV"])
@@ -47,7 +47,7 @@ class ExtData(ExtDataStock):
         (indxs,) = np.where(1.0 / spec_dict["XVALS"] > 1.0)
         self.waves["BAND"] = (1.0 / spec_dict["XVALS"][indxs]) * u.micron
         self.exts["BAND"] = spec_dict["EXTCURV_RAW"][indxs]
-        self.npts["BAND"] = spec_dict["EXTCURV_RAW_SIG"][indxs]
+        self.npts["BAND"] = np.full((len(indxs)), 1)
         self.uncs["BAND"] = spec_dict["EXTCURV_RAW_SIG"][indxs]
         self.names["BAND"] = ["JohnJ", "JohnH", "JohnK"]
 
@@ -78,4 +78,4 @@ if __name__ == "__main__":
 
             ofile = ifile.replace("fitzpatrick19/", "fit19_")
             ofile = ofile.replace("_extcrv.save", "_ext.fits")
-            ext.save(ofile)
+            next.save(ofile)

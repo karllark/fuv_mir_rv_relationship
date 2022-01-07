@@ -1,4 +1,5 @@
 import copy
+import warnings
 import numpy as np
 import astropy.units as u
 
@@ -30,7 +31,8 @@ def rebin_extdata(ext, source, waverange, resolution):
         raise ValueError("BAND extinction cannot be rebinned")
 
     if source not in ext.exts.keys():
-        raise ValueError(f"{source} extinction not present")
+        warnings.warn(f"{source} extinction not present")
+        return ext
 
     # setup wavelength grid
     full_wave, full_wave_min, full_wave_max = _wavegrid(
@@ -41,7 +43,7 @@ def rebin_extdata(ext, source, waverange, resolution):
     # setup the output ExtData
     outext = copy.deepcopy(ext)
 
-    outext.waves[source] = full_wave
+    outext.waves[source] = full_wave * u.micron
     outext.exts[source] = np.zeros((n_waves), dtype=float)
     outext.uncs[source] = np.zeros((n_waves), dtype=float)
     outext.npts[source] = np.zeros((n_waves), dtype=int)

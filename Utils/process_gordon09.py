@@ -44,4 +44,4 @@ if __name__ == "__main__":
         next = rebin_extdata(next, "IUE", np.array([0.100, 0.35]) * u.micron, 500.)
 
         ofile = ifile.replace("gordon09/", "gor09_")
-        ext.save(ofile)
+        next.save(ofile)
