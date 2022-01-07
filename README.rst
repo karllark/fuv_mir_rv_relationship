@@ -38,7 +38,14 @@ Figures
 
 2. 1/R(V) relationship at representative wavelengths: python Figs/plot_rep_waves.py
 
-3. Fit parameters versus 1/R(V): python Figs/plot_irv_params.py
+3. Fit parameters versus 1/R(V) in the UV: python Figs/plot_irv_params_waveregion.py --wavereg=uv
+
+4. Fit parameters versus 1/R(V) in the UV: python Figs/plot_irv_params_waveregion.py --wavereg=opt
+
+5. Fit parameters versus 1/R(V) in the UV: python Figs/plot_irv_params_waveregion.py --wavereg=ir
+
+?. Fit parameters versus 1/R(V): python Figs/plot_irv_params.py
+
 
 Tables
 ------
