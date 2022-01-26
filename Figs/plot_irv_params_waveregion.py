@@ -7,10 +7,11 @@ from astropy.table import QTable
 import astropy.units as u
 from astropy.stats import sigma_clip
 from astropy.modeling.fitting import LevMarLSQFitter, FittingWithOutlierRemoval
+from astropy.modeling.models import Drude1D, Polynomial1D, Legendre1D
 
 from dust_extinction.shapes import FM90
 
-from plot_irv_params import G21mod
+from helpers import G21mod, G22opt, G22pow
 
 
 def plot_irv_ssamp(
@@ -97,13 +98,39 @@ def plot_irv_ssamp(
             label=label,
             alpha=0.75,
         )
-        # ax[3].plot(
-        #     itab["waves"][gvals],
-        #     itab["hfrmss"][gvals],
-        #     color=color,
-        #     label=label,
-        #     alpha=0.75,
-        # )
+        if "hfslopes_std" in itab.colnames:
+            ax[0].plot(
+                itab["waves"][gvals],
+                itab["hfintercepts"][gvals] + itab["hfintercepts_std"][gvals],
+                linestyle="dashed",
+                color=color,
+                label=label,
+                alpha=0.75,
+            )
+            ax[0].plot(
+                itab["waves"][gvals],
+                itab["hfintercepts"][gvals] - itab["hfintercepts_std"][gvals],
+                linestyle="dashed",
+                color=color,
+                label=label,
+                alpha=0.75,
+            )
+            ax[2].plot(
+                itab["waves"][gvals],
+                itab["hfslopes"][gvals] + itab["hfslopes_std"],
+                linestyle="dashed",
+                color=color,
+                label=label,
+                alpha=0.75,
+            )
+            ax[2].plot(
+                itab["waves"][gvals],
+                itab["hfslopes"][gvals] - itab["hfslopes_std"],
+                linestyle="dashed",
+                color=color,
+                label=label,
+                alpha=0.75,
+            )
 
     return (itab["npts"], itab["waves"], itab["hfintercepts"], itab["hfslopes"])
 
@@ -115,12 +142,91 @@ def plot_resid(ax, data, dindx, model, color):
     bvals = data[0] <= 0
     data[dindx][bvals] = np.NAN
 
+    # only plot where the model is valid
+    gvals = (data[1].value >= 1.0 / model.x_range[1]) & (
+        data[1].value <= 1.0 / model.x_range[0]
+    )
+    fitx = 1.0 / data[1][gvals].value
     ax.plot(
-        data[1],
-        data[dindx] - model(data[1]),
+        data[1][gvals],
+        data[dindx][gvals] - model(fitx),
         color=color,
         alpha=0.75,
     )
+
+
+def plot_wavereg(ax, models, datasets, colors, wrange):
+    """
+    Do the fits and plot the fits and residuals
+    """
+    npts = []
+    waves = []
+    intercepts = []
+    slopes = []
+    for cdata in datasets:
+        npts.append(cdata[0])
+        waves.append(cdata[1])
+        intercepts.append(cdata[2])
+        slopes.append(cdata[3])
+    all_npts = np.concatenate(npts)
+    all_waves = np.concatenate(waves)
+    all_intercepts = np.concatenate(intercepts)
+    all_slopes = np.concatenate(slopes)
+
+    sindxs = np.argsort(all_waves)
+    all_waves = all_waves[sindxs]
+    all_npts = all_npts[sindxs]
+    all_intercepts = all_intercepts[sindxs]
+    all_slopes = all_slopes[sindxs]
+
+    gvals = (all_npts > 0) & (all_waves >= wrange[0]) & (all_waves <= wrange[1])
+
+    fit = LevMarLSQFitter()
+    or_fit = FittingWithOutlierRemoval(fit, sigma_clip, niter=3, sigma=3.0)
+    rejsym = "kx"
+
+    # intercept
+    # cmodelfit = fit(
+    #     cmodelinit, 1.0 / all_waves[gvals].value, all_intercepts[gvals], maxiter=500
+    # )
+    fitx = 1.0 / all_waves[gvals].value
+    cmodelfit, mask = or_fit(models[0], fitx, all_intercepts[gvals])
+    filtered_data = np.ma.masked_array(all_intercepts[gvals], mask=~mask)
+    fitted_models = [cmodelfit]
+
+    print("intercepts")
+    print(cmodelfit.param_names)
+    print(cmodelfit.parameters)
+
+    ax[0].plot(all_waves[gvals], cmodelfit(fitx))
+    ax[0].plot(all_waves[gvals], filtered_data, rejsym, label="rejected")
+
+    for cdata, ccolor in zip(datasets, colors):
+        plot_resid(ax[1], cdata, 2, cmodelfit, ccolor)
+    filtered_data2 = np.ma.masked_array(
+        all_intercepts[gvals] - cmodelfit(fitx), mask=~mask
+    )
+    ax[1].plot(all_waves[gvals], filtered_data2, rejsym, label="rejected")
+
+    # slope
+    cmodelfit, mask = or_fit(models[1], fitx, all_slopes[gvals])
+    filtered_data = np.ma.masked_array(all_slopes[gvals], mask=~mask)
+    fitted_models.append(cmodelfit)
+
+    print("slopes")
+    print(cmodelfit.param_names)
+    print(cmodelfit.parameters)
+
+    ax[2].plot(all_waves[gvals], cmodelfit(fitx))
+    ax[2].plot(all_waves[gvals], filtered_data, rejsym, label="rejected")
+
+    for cdata, ccolor in zip(datasets, colors):
+        plot_resid(ax[3], cdata, 3, cmodelfit, ccolor)
+    filtered_data2 = np.ma.masked_array(all_slopes[gvals] - cmodelfit(fitx), mask=~mask)
+    print("total masked", np.sum(mask))
+    ax[3].plot(all_waves[gvals], filtered_data2, rejsym, label="rejected")
+
+    return fitted_models
 
 
 if __name__ == "__main__":
@@ -182,18 +288,6 @@ if __name__ == "__main__":
     # plot parameters
     if args.wavereg == "uv":
         gor09_res1 = plot_irv_ssamp(ax, gor09_fuse, "G09", color=gor09_color)
-        # gor09_res2 = plot_irv_ssamp(
-        #     ax, gor09_iue, None, color=gor09_color, inst="IUE", linestyle="dashed"
-        # )
-        # gor21_res = plot_irv_ssamp(
-        #     ax, gor21_iue, "G21", color=gor21_color, inst="IUE",
-        # )
-        # dec22_res = plot_irv_ssamp(
-        #     ax, dec22_iue, "D22", color=dec22_color, inst="IUE"
-        # )
-        # fit19_res = plot_irv_ssamp(
-        #     ax, fit19_stis, "F19", color=fit19_color, inst="STIS"
-        # )
         alliue_res = plot_irv_ssamp(ax, aiue_iue, "All", color=aiue_color, inst="IUE")
         xrange = [0.09, 0.32]
         yrange_a_type = "linear"
@@ -201,6 +295,14 @@ if __name__ == "__main__":
         yrange_b = [1.0, 50.0]
         yrange_s = [0.0, 2.0]
         xticks = [0.09, 0.1, 0.12, 0.15, 0.2, 0.25, 0.3]
+
+        # fitting
+        datasets = [alliue_res, gor09_res1]
+        colors = [aiue_color, gor09_color]
+        fm90 = FM90()
+        plot_wavereg(ax, [fm90, fm90], datasets, colors, wrange=[0.09, 0.35] * u.micron)
+        ax[1].set_ylim(-0.2, 0.2)
+        ax[3].set_ylim(-3.0, 3.0)
     elif args.wavereg == "opt":
         fit19_res = plot_irv_ssamp(
             ax, fit19_stis, "F19", color=fit19_color, inst="STIS"
@@ -209,9 +311,67 @@ if __name__ == "__main__":
         xrange = [0.30, 1.0]
         yrange_a_type = "linear"
         yrange_a = [0.2, 2.0]
-        yrange_b = [-1.0, 3.5]
+        yrange_b = [-1.5, 3.5]
         yrange_s = [0.0, 0.08]
         xticks = [0.3, 0.35, 0.45, 0.55, 0.7, 0.9, 1.0]
+
+        # fitting
+        datasets = [fit19_res, dec22_res1]
+        colors = [fit19_color, dec22_color]
+        # g22opt = G22opt()
+        g22opt = (
+            Polynomial1D(4)
+            # Legendre1D(3)
+            + Drude1D(amplitude=0.1, x_0=2.238, fwhm=0.243)
+            + Drude1D(amplitude=0.1, x_0=2.054, fwhm=0.179)
+            + Drude1D(amplitude=0.1, x_0=1.587, fwhm=0.243)
+        )
+        # g22opt[1].amplitude.bounds = [0.0, 0.2]
+        # g22opt[2].amplitude.bounds = [0.0, 0.2]
+        g22opt[1].fwhm.fixed = True
+        g22opt[2].fwhm.fixed = True
+        g22opt[3].fwhm.fixed = True
+        # g22opt[1].x_0.fixed = True
+        # g22opt[2].x_0.fixed = True
+        # g22opt[3].x_0.fixed = True
+        g22opt.x_range = [1.0 / 1.0, 1.0 / 0.3]
+        fitted_models = plot_wavereg(
+            ax, [g22opt, g22opt], datasets, colors, wrange=[0.30, 1.0] * u.micron
+        )
+        # ax[1].set_ylim(-0.2, 0.2)
+        ax[3].set_ylim(-0.2, 0.2)
+
+        # plotting the components
+        modx = np.linspace(0.30, 1.0, 100)
+        ax[0].plot(modx, fitted_models[0][0](1.0 / modx), "k:")
+
+        gvals = (datasets[0][1].value >= 1.0 / fitted_models[0].x_range[1]) & (
+            datasets[0][1].value <= 1.0 / fitted_models[0].x_range[0]
+        )
+        fitx = 1.0 / datasets[0][1][gvals].value
+        ax[1].plot(
+            datasets[0][1][gvals].value,
+            datasets[0][2][gvals] - fitted_models[0][0](fitx),
+            "k--",
+        )
+        ax[1].plot(
+            datasets[0][1][gvals].value,
+            fitted_models[0][1](fitx),
+            "k:",
+        )
+        ax[1].plot(
+            datasets[0][1][gvals].value,
+            fitted_models[0][2](fitx),
+            "k:",
+        )
+        # ax[1].plot(
+        #     datasets[0][1][gvals].value,
+        #     fitted_models[0][3](fitx),
+        #     "k:",
+        # )
+
+        ax[2].plot(modx, fitted_models[1][0](1.0 / modx), "k:")
+
     else:
         dec22_res1 = plot_irv_ssamp(ax, dec22_spexsxd, "D22", color=dec22_color)
         dec22_res2 = plot_irv_ssamp(
@@ -228,6 +388,22 @@ if __name__ == "__main__":
         yrange_b = [-1.0, 0.5]
         yrange_s = [0.0, 0.08]
         xticks = [1.0, 1.5, 2.0, 3.0, 4.0, 5.0, 7.0, 10.0, 15.0, 20.0, 30.0]
+
+        # fitting
+        datasets = [dec22_res1, dec22_res2, gor21_res]
+        colors = [dec22_color, dec22_color, gor21_color]
+        g21mod = G21mod()
+        g21mod.ice_amp.fixed = True
+        g21mod.ice_fwhm.fixed = True
+        g21mod.ice_center.fixed = True
+        g21mod.ice_asym.fixed = True
+
+        irpow = G22pow()
+        plot_wavereg(
+            ax, [g21mod, irpow], datasets, colors, wrange=[1.0, 40.0] * u.micron
+        )
+        ax[1].set_ylim(-0.015, 0.015)
+        # ax[3].set_ylim(-0.5, 0.5)
 
     # set the wavelength range for all the plots
     ax[4].set_xscale("log")
@@ -253,148 +429,6 @@ if __name__ == "__main__":
     ax[4].xaxis.set_major_formatter(ScalarFormatter())
     ax[4].xaxis.set_minor_formatter(ScalarFormatter())
     ax[4].set_xticks(xticks, minor=True)
-
-    # do the fitting
-    fit = LevMarLSQFitter()
-    or_fit = FittingWithOutlierRemoval(fit, sigma_clip, niter=3, sigma=3.0)
-    rejsym = "kx"
-
-    if args.wavereg == "uv":
-        # fit FM90
-        all_npts = np.concatenate((alliue_res[0], gor09_res1[0]))
-        all_waves = np.concatenate((alliue_res[1], gor09_res1[1]))
-        all_intercepts = np.concatenate((alliue_res[2], gor09_res1[2]))
-        all_slopes = np.concatenate((alliue_res[3], gor09_res1[3]))
-
-        # all_npts = alliue_res[0]
-        # all_waves = alliue_res[1]
-        # all_intercepts = alliue_res[2]
-        # all_slopes = alliue_res[3]
-
-        sindxs = np.argsort(all_waves)
-        all_waves = all_waves[sindxs]
-        all_npts = all_npts[sindxs]
-        all_intercepts = all_intercepts[sindxs]
-        all_slopes = all_slopes[sindxs]
-
-        gvals = all_npts > 0
-
-        fm90init = FM90()
-
-        # intercept
-        # fm90fit = fit(
-        #     fm90init, 1.0 / all_waves[gvals].value, all_intercepts[gvals], maxiter=500
-        # )
-        #
-        # print("FM90 intercepts")
-        # print(fm90fit.param_names)
-        # print(fm90fit.parameters)
-
-        # fm90fit, mask = or_fit(fm90init, all_waves[gvals], all_intercepts[gvals])
-        fm90fit, mask = or_fit(fm90init, 1.0 / all_waves[gvals].value, all_intercepts[gvals])
-        filtered_data = np.ma.masked_array(all_intercepts[gvals], mask=~mask)
-
-        print("FM90 intercepts")
-        print(fm90fit.param_names)
-        print(fm90fit.parameters)
-
-        ax[0].plot(all_waves[gvals], fm90fit(all_waves[gvals]))
-        ax[0].plot(all_waves[gvals], filtered_data, rejsym, label="rejected data")
-
-        plot_resid(ax[1], gor09_res1, 2, fm90fit, gor09_color)
-        plot_resid(ax[1], alliue_res, 2, fm90fit, aiue_color)
-        ax[1].set_ylim(-0.2, 0.2)
-
-        # slope
-        # fm90fit = fit(
-        #     fm90init, 1.0 / all_waves[gvals].value, all_slopes[gvals], maxiter=500
-        # )
-        # print("FM90 slopes")
-        # print(fm90fit.param_names)
-        # print(fm90fit.parameters)
-
-        fm90fit, mask = or_fit(fm90init, 1.0 / all_waves[gvals].value, all_slopes[gvals])
-        filtered_data = np.ma.masked_array(all_slopes[gvals], mask=~mask)
-
-        print("FM90 intercepts")
-        print(fm90fit.param_names)
-        print(fm90fit.parameters)
-
-        ax[2].plot(all_waves[gvals], fm90fit(all_waves[gvals]))
-        ax[2].plot(all_waves[gvals], filtered_data, rejsym, label="rejected data")
-
-        plot_resid(ax[3], gor09_res1, 3, fm90fit, gor09_color)
-        plot_resid(ax[3], alliue_res, 3, fm90fit, aiue_color)
-        ax[3].set_ylim(-3.0, 3.0)
-
-    elif args.wavereg == "ir":
-        # fit G21 modified to > 1 micron data
-        all_npts = np.concatenate((dec22_res1[0], dec22_res2[0], gor21_res[0]))
-        all_waves = np.concatenate((dec22_res1[1], dec22_res2[1], gor21_res[1]))
-        all_intercepts = np.concatenate((dec22_res1[2], dec22_res2[2], gor21_res[2]))
-        all_slopes = np.concatenate((dec22_res1[3], dec22_res2[3], gor21_res[3]))
-
-        # fit intercepts
-        g21init = G21mod()
-        g21init.ice_amp.fixed = True
-        g21init.ice_fwhm.fixed = True
-        g21init.ice_center.fixed = True
-        g21init.ice_asym.fixed = True
-        # g21init.sil1_asym.fixed = True
-        bvals = all_waves < 1.0 * u.micron
-        all_npts[bvals] = 0
-        gvals = all_npts > 0
-        # g21fit = fit(
-        #     g21init, 1.0 / all_waves[gvals].value, all_intercepts[gvals], maxiter=500
-        # )
-        g21fit, mask = or_fit(g21init, 1.0 / all_waves[gvals].value, all_intercepts[gvals])
-        filtered_data = np.ma.masked_array(all_intercepts[gvals], mask=~mask)
-        print(g21fit.param_names)
-        print(g21fit.parameters)
-        print(g21init.parameters)
-        print(fit.fit_info["message"])
-        ax[0].plot(all_waves[gvals], g21fit(all_waves[gvals]))
-        ax[0].plot(all_waves[gvals], filtered_data, rejsym, label="rejected data")
-
-        plot_resid(ax[1], dec22_res1, 2, g21fit, dec22_color)
-        plot_resid(ax[1], dec22_res2, 2, g21fit, dec22_color)
-        plot_resid(ax[1], gor21_res, 2, g21fit, gor21_color)
-        ax[1].set_ylim(-0.015, 0.015)
-
-        # fit slopes
-        g21init = G21mod()
-        g21init.scale = -0.8
-        g21init.scale.bounds = [-2.0, 0.0]
-        g21init.alpha2 = 0.0
-        g21init.alpha2.fixed = True
-        # g21init.ice_amp = 0.0
-        # g21init.ice_amp.fixed = True
-        g21init.ice_fwhm.fixed = True
-        g21init.ice_center.fixed = True
-        g21init.ice_asym.fixed = True
-        g21init.sil1_amp = 0.0
-        g21init.sil1_amp.fixed = True
-        g21init.sil2_amp = 0.0
-        g21init.sil2_amp.fixed = True
-        fit = LevMarLSQFitter()
-        # g21fit = fit(
-        #     g21init, 1.0 / all_waves[gvals].value, all_slopes[gvals], maxiter=500
-        # )
-        g21fit, mask = or_fit(g21init, 1.0 / all_waves[gvals].value, all_slopes[gvals])
-        filtered_data = np.ma.masked_array(all_slopes[gvals], mask=~mask)
-        print(g21fit.param_names)
-        print(g21fit.parameters)
-        print(g21init.parameters)
-        print(fit.fit_info["message"])
-        ax[2].plot(all_waves[gvals], g21fit(all_waves[gvals]))
-        ax[2].plot(all_waves[gvals], filtered_data, rejsym, label="rejected data")
-
-        plot_resid(ax[3], dec22_res1, 3, g21fit, dec22_color)
-        plot_resid(ax[3], dec22_res2, 3, g21fit, dec22_color)
-        plot_resid(ax[3], gor21_res, 3, g21fit, gor21_color)
-        filtered_data2 = np.ma.masked_array(all_slopes[gvals] - g21fit(all_waves[gvals]), mask=~mask)
-        ax[3].plot(all_waves[gvals], filtered_data2, rejsym, label="rejected data")
-        ax[3].set_ylim(-0.5, 0.5)
 
     fname = f"fuv_mir_rv_fit_params_{args.wavereg}"
     if args.png:

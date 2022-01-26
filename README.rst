@@ -28,7 +28,7 @@ Data
 Original data processed to be in a uniform format and have values and uncertainties
 for E(B-V), A(V), and R(V) using Utils/process_(gordon09, fitzpatrick19, gordon21).py.
 
-Linear fits (using hyperfit) of 1/R(V) versus A(lambda)/A(V): python Figs/fit_irv.py
+Linear fits (using hyperfit) of 1/R(V) versus A(lambda)/A(V): python Utils/fit_irv.py
 
 Figures
 -------
