@@ -16,8 +16,14 @@ if __name__ == "__main__":
 
     for fname in files:
         ifile = fname.replace("_bin", "")
-        # ifile = fname
         ext = ExtData(ifile)
+        # extfuse = ExtData(fname)
+
+        # replace FUSE info with Gordon09 created binned extinction
+        # ext.waves["FUSE"] = extfuse.waves["FUSE"]
+        # ext.exts["FUSE"] = extfuse.exts["FUSE"]
+        # ext.uncs["FUSE"] = extfuse.uncs["FUSE"]
+        # ext.npts["FUSE"] = extfuse.npts["FUSE"]
 
         # convert from A(lambda)/A(V) back to original E(lambda-V)
         # allows for a new fitting of A(V) based on a powerlaw
@@ -44,4 +50,5 @@ if __name__ == "__main__":
         next = rebin_extdata(next, "IUE", np.array([0.100, 0.35]) * u.micron, 500.)
 
         ofile = ifile.replace("gordon09/", "gor09_")
+        ofile = ofile.replace("_bin", "")
         next.save(ofile)

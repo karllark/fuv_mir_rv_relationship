@@ -229,8 +229,8 @@ if __name__ == "__main__":
 
     if args.dataset == "G09":
         exts_gor09 = get_exts("gor09")
-        fit_allwaves(exts_gor09, "FUSE", "gor09_fuse_irv_params.fits")
-        fit_allwaves(exts_gor09, "IUE", "gor09_iue_irv_params.fits")
+        fit_allwaves(exts_gor09, "FUSE", "gor09_fuse_irv_params.fits", hfemcee=True)
+        # fit_allwaves(exts_gor09, "IUE", "gor09_iue_irv_params.fits")
     elif args.dataset == "F19":
         exts_fit19 = get_exts("fit19")
         fit_allwaves(exts_fit19, "STIS", "fit19_stis_irv_params.fits")
