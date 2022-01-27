@@ -104,7 +104,6 @@ def plot_irv_ssamp(
                 itab["hfintercepts"][gvals] + itab["hfintercepts_std"][gvals],
                 linestyle="dashed",
                 color=color,
-                label=label,
                 alpha=0.75,
             )
             ax[0].plot(
@@ -112,7 +111,6 @@ def plot_irv_ssamp(
                 itab["hfintercepts"][gvals] - itab["hfintercepts_std"][gvals],
                 linestyle="dashed",
                 color=color,
-                label=label,
                 alpha=0.75,
             )
             ax[2].plot(
@@ -120,7 +118,6 @@ def plot_irv_ssamp(
                 itab["hfslopes"][gvals] + itab["hfslopes_std"],
                 linestyle="dashed",
                 color=color,
-                label=label,
                 alpha=0.75,
             )
             ax[2].plot(
@@ -128,9 +125,23 @@ def plot_irv_ssamp(
                 itab["hfslopes"][gvals] - itab["hfslopes_std"],
                 linestyle="dashed",
                 color=color,
-                label=label,
                 alpha=0.75,
             )
+            ax[4].plot(
+                itab["waves"][gvals],
+                itab["hfsigmas"][gvals] + itab["hfsigmas_std"],
+                linestyle="dashed",
+                color=color,
+                alpha=0.75,
+            )
+            ax[4].plot(
+                itab["waves"][gvals],
+                itab["hfsigmas"][gvals] - itab["hfsigmas_std"],
+                linestyle="dashed",
+                color=color,
+                alpha=0.75,
+            )
+
 
     return (itab["npts"], itab["waves"], itab["hfintercepts"], itab["hfslopes"])
 
@@ -233,8 +244,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--wavereg",
-        choices=["uv", "opt", "ir"],
-        default="ir",
+        choices=["uv", "opt", "ir", "all"],
+        default="all",
         help="Wavelength region to plot",
     )
     parser.add_argument("--png", help="save figure as a png file", action="store_true")
@@ -372,7 +383,10 @@ if __name__ == "__main__":
 
         ax[2].plot(modx, fitted_models[1][0](1.0 / modx), "k:")
 
-    else:
+    elif args.wavereg == "ir":
+        fit19_res = plot_irv_ssamp(
+            ax, fit19_stis, "F19", color=fit19_color, inst="STIS"
+        )
         dec22_res1 = plot_irv_ssamp(ax, dec22_spexsxd, "D22", color=dec22_color)
         dec22_res2 = plot_irv_ssamp(
             ax,
@@ -382,7 +396,7 @@ if __name__ == "__main__":
             inst="SpeXLXD",
         )
         gor21_res = plot_irv_ssamp(ax, gor21_irs, "G21", color=gor21_color)
-        xrange = [1.0, 35.0]
+        xrange = [0.8, 35.0]
         yrange_a_type = "log"
         yrange_a = [0.02, 0.4]
         yrange_b = [-1.0, 0.5]
@@ -390,8 +404,8 @@ if __name__ == "__main__":
         xticks = [1.0, 1.5, 2.0, 3.0, 4.0, 5.0, 7.0, 10.0, 15.0, 20.0, 30.0]
 
         # fitting
-        datasets = [dec22_res1, dec22_res2, gor21_res]
-        colors = [dec22_color, dec22_color, gor21_color]
+        datasets = [fit19_res, dec22_res1, dec22_res2, gor21_res]
+        colors = [fit19_color, dec22_color, dec22_color, gor21_color]
         g21mod = G21mod()
         g21mod.ice_amp.fixed = True
         g21mod.ice_fwhm.fixed = True
@@ -400,10 +414,31 @@ if __name__ == "__main__":
 
         irpow = G22pow()
         plot_wavereg(
-            ax, [g21mod, irpow], datasets, colors, wrange=[1.0, 40.0] * u.micron
+            ax, [g21mod, irpow], datasets, colors, wrange=[0.8, 40.0] * u.micron
         )
         ax[1].set_ylim(-0.015, 0.015)
         # ax[3].set_ylim(-0.5, 0.5)
+    else:
+        gor09_res1 = plot_irv_ssamp(ax, gor09_fuse, "G09", color=gor09_color)
+        alliue_res = plot_irv_ssamp(ax, aiue_iue, "All", color=aiue_color, inst="IUE")
+        fit19_res = plot_irv_ssamp(
+            ax, fit19_stis, "F19", color=fit19_color, inst="STIS"
+        )
+        dec22_res1 = plot_irv_ssamp(ax, dec22_spexsxd, "D22", color=dec22_color)
+        dec22_res2 = plot_irv_ssamp(
+            ax,
+            dec22_spexlxd,
+            None,
+            color=dec22_color,
+            inst="SpeXLXD",
+        )
+        gor21_res = plot_irv_ssamp(ax, gor21_irs, "G21", color=gor21_color)
+        xrange = [0.09, 35.0]
+        yrange_a_type = "log"
+        yrange_a = [0.02, 7.5]
+        yrange_b = [-1.0, 50.0]
+        yrange_s = [0.0, 2.0]
+        xticks = [0.1, 1.0, 1.5, 2.0, 3.0, 4.0, 5.0, 7.0, 10.0, 15.0, 20.0, 30.0]
 
     # set the wavelength range for all the plots
     ax[4].set_xscale("log")
