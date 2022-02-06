@@ -119,7 +119,7 @@ def plot_resid(ax, data, dindx, model, color):
     )
 
 
-def plot_wavereg(ax, models, datasets, colors, wrange):
+def plot_wavereg(ax, models, datasets, colors, wrange, no_weights=False):
     """
     Do the fits and plot the fits and residuals
     """
@@ -143,6 +143,11 @@ def plot_wavereg(ax, models, datasets, colors, wrange):
     all_slopes = np.concatenate(slopes)
     all_slopes_unc = np.concatenate(slopes_unc)
 
+    if no_weights:
+        tnpts = len(all_waves)
+        all_intercepts_unc = np.full(tnpts, 1.0)
+        all_slopes_unc = np.full(tnpts, 1.0)
+
     sindxs = np.argsort(all_waves)
     all_waves = all_waves[sindxs]
     all_npts = all_npts[sindxs]
@@ -163,9 +168,8 @@ def plot_wavereg(ax, models, datasets, colors, wrange):
     # )
     fitx = 1.0 / all_waves[gvals].value
     cmodelfit, mask = or_fit(
-        models[0], fitx, all_intercepts[gvals]
-    )  # , weights=1.0 / all_intercepts_unc[gvals]
-    # )
+        models[0], fitx, all_intercepts[gvals], weights=1.0 / all_intercepts_unc[gvals]
+    )
     filtered_data = np.ma.masked_array(all_intercepts[gvals], mask=~mask)
     fitted_models = [cmodelfit]
 
@@ -185,9 +189,8 @@ def plot_wavereg(ax, models, datasets, colors, wrange):
 
     # slope
     cmodelfit, mask = or_fit(
-        models[1], fitx, all_slopes[gvals]
-    )  # , weights=1.0 / all_slopes_unc[gvals]
-    # )
+        models[1], fitx, all_slopes[gvals], weights=1.0 / all_slopes_unc[gvals]
+    )
     filtered_data = np.ma.masked_array(all_slopes[gvals], mask=~mask)
     fitted_models.append(cmodelfit)
 
@@ -276,27 +279,43 @@ if __name__ == "__main__":
     if args.wavereg == "uv":
         gor09_res1 = plot_irv_ssamp(ax, gor09_fuse, "G09", color=gor09_color)
         alliue_res = plot_irv_ssamp(ax, aiue_iue, "All", color=aiue_color, inst="IUE")
-        xrange = [0.09, 0.30]
+        fit19_res = plot_irv_ssamp(
+            ax, fit19_stis, "F19", color=fit19_color, inst="STIS"
+        )
+        xrange = [0.09, 0.33]
         yrange_a_type = "linear"
         yrange_a = [1.0, 7.5]
         yrange_b = [1.0, 50.0]
-        yrange_s = [0.0, 2.0]
+        yrange_s = [0.0, 1.5]
         xticks = [0.09, 0.1, 0.12, 0.15, 0.2, 0.25, 0.3]
 
+        # increase the weight of the 2175 A bump region to ensure it is fit well
+        # as has been done since FM90
+        # done by decreasing the uncdertainties
+        bvals = (alliue_res[1] > 0.20 * u.micron) & (alliue_res[1] < 0.24 * u.micron)
+        alliue_res[4][bvals] /= 5.0
+        alliue_res[5][bvals] /= 5.0
+
+        # decrease the weight of the IUE data in the "poor" flux calibration/stability
+        # region - see section 4.2 of Fitzpatrick et al. 2019
+        bvals = alliue_res[1] > 0.27 * u.micron
+        alliue_res[4][bvals] *= 5.0
+        alliue_res[5][bvals] *= 5.0
+
         # fitting
-        datasets = [alliue_res, gor09_res1]
-        colors = [aiue_color, gor09_color]
+        datasets = [alliue_res, gor09_res1, fit19_res]
+        colors = [aiue_color, gor09_color, fit19_color]
         fm90 = FM90()
-        plot_wavereg(ax, [fm90, fm90], datasets, colors, wrange=[0.09, 0.35] * u.micron)
+        plot_wavereg(ax, [fm90, fm90], datasets, colors, wrange=[0.09, 0.33] * u.micron)
         ax[1].set_ylim(-0.2, 0.2)
         ax[3].set_ylim(-3.0, 3.0)
     elif args.wavereg == "opt":
-        alliue_res = plot_irv_ssamp(ax, aiue_iue, "All", color=aiue_color, inst="IUE")
+        # alliue_res = plot_irv_ssamp(ax, aiue_iue, "All", color=aiue_color, inst="IUE")
         fit19_res = plot_irv_ssamp(
             ax, fit19_stis, "F19", color=fit19_color, inst="STIS"
         )
         dec22_res1 = plot_irv_ssamp(ax, dec22_spexsxd, "D22", color=dec22_color)
-        xrange = [0.27, 1.0]
+        xrange = [0.30, 1.0]
         yrange_a_type = "linear"
         yrange_a = [0.2, 2.2]
         yrange_b = [-1.5, 6.0]
@@ -304,8 +323,8 @@ if __name__ == "__main__":
         xticks = [0.3, 0.35, 0.45, 0.55, 0.7, 0.9, 1.0]
 
         # fitting
-        datasets = [alliue_res, fit19_res, dec22_res1]
-        colors = [aiue_color, fit19_color, dec22_color]
+        datasets = [fit19_res, dec22_res1]
+        colors = [fit19_color, dec22_color]
         # g22opt = G22opt()
         g22opt = (
             Polynomial1D(5)
@@ -323,8 +342,18 @@ if __name__ == "__main__":
         g22opt[2].x_0.fixed = True
         g22opt[3].x_0.fixed = True
         g22opt.x_range = [1.0 / 1.0, 1.0 / 0.27]
+
+        # do not use weights in the fitting
+        # systematic issues with the stellar atmosphere models for the Paschen series
+        # idea is to equally weight the F19 and D22 results as both have
+        # isues in this wavelength range and the F19 sample has ~5x more stars
         fitted_models = plot_wavereg(
-            ax, [g22opt, g22opt], datasets, colors, wrange=[0.27, 1.1] * u.micron
+            ax,
+            [g22opt, g22opt],
+            datasets,
+            colors,
+            wrange=[0.30, 1.0] * u.micron,
+            no_weights=True,
         )
         ax[1].set_ylim(-0.03, 0.1)
         ax[3].set_ylim(-0.3, 0.3)
@@ -361,9 +390,9 @@ if __name__ == "__main__":
         ax[2].plot(modx, fitted_models[1][0](1.0 / modx), "k:")
 
     elif args.wavereg == "ir":
-        fit19_res = plot_irv_ssamp(
-            ax, fit19_stis, "F19", color=fit19_color, inst="STIS"
-        )
+        # fit19_res = plot_irv_ssamp(
+        #     ax, fit19_stis, "F19", color=fit19_color, inst="STIS"
+        # )
         dec22_res1 = plot_irv_ssamp(ax, dec22_spexsxd, "D22", color=dec22_color)
         dec22_res2 = plot_irv_ssamp(
             ax,
@@ -381,8 +410,8 @@ if __name__ == "__main__":
         xticks = [1.0, 1.5, 2.0, 3.0, 4.0, 5.0, 7.0, 10.0, 15.0, 20.0, 30.0]
 
         # fitting
-        datasets = [fit19_res, dec22_res1, dec22_res2, gor21_res]
-        colors = [fit19_color, dec22_color, dec22_color, gor21_color]
+        datasets = [dec22_res1, dec22_res2, gor21_res]
+        colors = [dec22_color, dec22_color, gor21_color]
         g21mod = G21mod()
         # g21mod.ice_amp.fixed = True
         g21mod.swave.bounds = [3.0, 5.0]
@@ -397,7 +426,12 @@ if __name__ == "__main__":
         irpow.x_range = [1.0 / 40.0, 1.0 / 0.8]
 
         plot_wavereg(
-            ax, [g21mod, irpow], datasets, colors, wrange=[0.8, 40.0] * u.micron
+            ax,
+            [g21mod, irpow],
+            datasets,
+            colors,
+            wrange=[1.0, 40.0] * u.micron,
+            no_weights=False,
         )
         ax[1].set_ylim(-0.015, 0.015)
         ax[3].set_ylim(-0.2, 0.2)
@@ -423,7 +457,24 @@ if __name__ == "__main__":
         yrange_b = [-2.0, 50.0]
         yrange_s_type = "log"
         yrange_s = [0.001, 1.0]
-        xticks = [0.1, 0.2, 0.3, 0.5, 0.8, 1.0, 1.5, 2.0, 3.0, 4.0, 5.0, 7.0, 10.0, 15.0, 20.0, 30.0]
+        xticks = [
+            0.1,
+            0.2,
+            0.3,
+            0.5,
+            0.8,
+            1.0,
+            1.5,
+            2.0,
+            3.0,
+            4.0,
+            5.0,
+            7.0,
+            10.0,
+            15.0,
+            20.0,
+            30.0,
+        ]
 
         g22mod = G22(Rv=3.1)
         modx = np.logspace(np.log10(0.091), np.log10(34.0), 1000) * u.micron
