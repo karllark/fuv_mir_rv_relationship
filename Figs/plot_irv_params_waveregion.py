@@ -315,7 +315,7 @@ if __name__ == "__main__":
             ax, fit19_stis, "F19", color=fit19_color, inst="STIS"
         )
         dec22_res1 = plot_irv_ssamp(ax, dec22_spexsxd, "D22", color=dec22_color)
-        xrange = [0.30, 1.0]
+        xrange = [0.30, 1.1]
         yrange_a_type = "linear"
         yrange_a = [0.2, 2.2]
         yrange_b = [-1.5, 6.0]
@@ -341,7 +341,7 @@ if __name__ == "__main__":
         g22opt[1].x_0.fixed = True
         g22opt[2].x_0.fixed = True
         g22opt[3].x_0.fixed = True
-        g22opt.x_range = [1.0 / 1.0, 1.0 / 0.27]
+        g22opt.x_range = [1.0 / 1.1, 1.0 / 0.27]
 
         # do not use weights in the fitting
         # systematic issues with the stellar atmosphere models for the Paschen series
@@ -352,7 +352,7 @@ if __name__ == "__main__":
             [g22opt, g22opt],
             datasets,
             colors,
-            wrange=[0.30, 1.0] * u.micron,
+            wrange=[0.30, 1.1] * u.micron,
             no_weights=True,
         )
         ax[1].set_ylim(-0.03, 0.1)
@@ -381,11 +381,11 @@ if __name__ == "__main__":
             fitted_models[0][2](fitx),
             "k:",
         )
-        # ax[1].plot(
-        #     datasets[0][1][gvals].value,
-        #     fitted_models[0][3](fitx),
-        #     "k:",
-        # )
+        ax[1].plot(
+            datasets[0][1][gvals].value,
+            fitted_models[0][3](fitx),
+            "k:",
+        )
 
         ax[2].plot(modx, fitted_models[1][0](1.0 / modx), "k:")
 
