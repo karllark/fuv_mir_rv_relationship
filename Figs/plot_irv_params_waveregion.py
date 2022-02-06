@@ -7,11 +7,11 @@ from astropy.table import QTable
 import astropy.units as u
 from astropy.stats import sigma_clip
 from astropy.modeling.fitting import LevMarLSQFitter, FittingWithOutlierRemoval
-from astropy.modeling.models import Drude1D, Polynomial1D, Legendre1D
+from astropy.modeling.models import Drude1D, Polynomial1D  # , Legendre1D
 
 from dust_extinction.shapes import FM90
 
-from helpers import G21mod, G22opt, G22pow
+from helpers import G21mod, G22  # , G22pow  # , G22opt
 
 
 def plot_irv_ssamp(
@@ -19,10 +19,27 @@ def plot_irv_ssamp(
 ):
 
     # remove bad regions
-    bregions = np.array([[1190.0, 1235.0], [1370.0, 1408.0], [1515.0, 1563.0]]) * u.AA
+    bregions = (
+        np.array(
+            [
+                [1190.0, 1235.0],
+                [1370.0, 1408.0],
+                [1515.0, 1563.0],
+                [6560.0, 6570.0],
+                [41000.0, 50000.0],
+            ]
+        )
+        * u.AA
+    )
     for cbad in bregions:
         bvals = np.logical_and(itab["waves"] > cbad[0], itab["waves"] < cbad[1])
         itab["npts"][bvals] = 0
+
+    # find regions that have large uncertainties in the intercept and remove
+    # gindxs = np.where(itab["npts"] > 0)
+    # bvals = (itab["hfintercepts"][gindxs] / itab["hfintercepts_std"][gindxs]) < 10
+    # itab["npts"][gindxs][bvals] = 0
+    # print(itab["waves"][gindxs][bvals])
 
     # trim ends
     if inst == "IUE":
@@ -43,107 +60,42 @@ def plot_irv_ssamp(
     itab["hfrmss"][bvals] = np.NAN
     gvals = itab["npts"] >= 0
     if simpfit:
-        ax[1].plot(
-            itab["waves"][gvals],
-            itab["slopes"][gvals],
-            linestyle="dashed",
-            color=color,
-            alpha=0.75,
-        )
-        ax[0].plot(
-            itab["waves"][gvals],
-            itab["intercepts"][gvals],
-            linestyle="dashed",
-            color=color,
-            alpha=0.75,
-        )
-        if "rmss" in itab.colnames:
-            ax[2].plot(
+        for k, cname in enumerate(["intercepts", "slopes", "rmss"]):
+            ax[k * 2].plot(
                 itab["waves"][gvals],
-                itab["rmss"][gvals],
+                itab[cname][gvals],
                 linestyle="dashed",
                 color=color,
                 alpha=0.75,
             )
-        # else:
-        #     ax[3, i].plot(
-        #         itab["waves"][gvals],
-        #         itab["sigmas"][gvals],
-        #         linestyle="dashed",
-        #         color=color,
-        #         alpha=0.75,
-        #     )
     if "hfslopes" in itab.colnames:
-        ax[0].plot(
-            itab["waves"][gvals],
-            itab["hfintercepts"][gvals],
-            linestyle=linestyle,
-            color=color,
-            label=label,
-            alpha=0.75,
-        )
-        ax[2].plot(
-            itab["waves"][gvals],
-            itab["hfslopes"][gvals],
-            linestyle=linestyle,
-            color=color,
-            label=label,
-            alpha=0.75,
-        )
-        ax[4].plot(
-            itab["waves"][gvals],
-            itab["hfsigmas"][gvals],
-            linestyle=linestyle,
-            color=color,
-            label=label,
-            alpha=0.75,
-        )
+        for k, cname in enumerate(["hfintercepts", "hfslopes", "hfsigmas"]):
+            ax[k * 2].plot(
+                itab["waves"][gvals],
+                itab[cname][gvals],
+                linestyle=linestyle,
+                color=color,
+                label=label,
+                alpha=0.75,
+            )
         if "hfslopes_std" in itab.colnames:
-            ax[0].plot(
-                itab["waves"][gvals],
-                itab["hfintercepts"][gvals] + itab["hfintercepts_std"][gvals],
-                linestyle="dashed",
-                color=color,
-                alpha=0.75,
-            )
-            ax[0].plot(
-                itab["waves"][gvals],
-                itab["hfintercepts"][gvals] - itab["hfintercepts_std"][gvals],
-                linestyle="dashed",
-                color=color,
-                alpha=0.75,
-            )
-            ax[2].plot(
-                itab["waves"][gvals],
-                itab["hfslopes"][gvals] + itab["hfslopes_std"],
-                linestyle="dashed",
-                color=color,
-                alpha=0.75,
-            )
-            ax[2].plot(
-                itab["waves"][gvals],
-                itab["hfslopes"][gvals] - itab["hfslopes_std"],
-                linestyle="dashed",
-                color=color,
-                alpha=0.75,
-            )
-            ax[4].plot(
-                itab["waves"][gvals],
-                itab["hfsigmas"][gvals] + itab["hfsigmas_std"],
-                linestyle="dashed",
-                color=color,
-                alpha=0.75,
-            )
-            ax[4].plot(
-                itab["waves"][gvals],
-                itab["hfsigmas"][gvals] - itab["hfsigmas_std"],
-                linestyle="dashed",
-                color=color,
-                alpha=0.75,
-            )
+            for k, cname in enumerate(["hfintercepts", "hfslopes", "hfsigmas"]):
+                ax[k * 2].fill_between(
+                    itab["waves"][gvals].value,
+                    itab[cname][gvals] - itab[f"{cname}_std"],
+                    itab[cname][gvals] + itab[f"{cname}_std"],
+                    color=color,
+                    alpha=0.25,
+                )
 
-
-    return (itab["npts"], itab["waves"], itab["hfintercepts"], itab["hfslopes"])
+    return (
+        itab["npts"],
+        itab["waves"],
+        itab["hfintercepts"],
+        itab["hfslopes"],
+        itab["hfintercepts_std"],
+        itab["hfslopes_std"],
+    )
 
 
 def plot_resid(ax, data, dindx, model, color):
@@ -160,6 +112,7 @@ def plot_resid(ax, data, dindx, model, color):
     fitx = 1.0 / data[1][gvals].value
     ax.plot(
         data[1][gvals],
+        # (data[dindx][gvals] - model(fitx)) / model(fitx),
         data[dindx][gvals] - model(fitx),
         color=color,
         alpha=0.75,
@@ -173,27 +126,35 @@ def plot_wavereg(ax, models, datasets, colors, wrange):
     npts = []
     waves = []
     intercepts = []
+    intercepts_unc = []
     slopes = []
+    slopes_unc = []
     for cdata in datasets:
         npts.append(cdata[0])
         waves.append(cdata[1])
         intercepts.append(cdata[2])
         slopes.append(cdata[3])
+        intercepts_unc.append(cdata[4])
+        slopes_unc.append(cdata[5])
     all_npts = np.concatenate(npts)
     all_waves = np.concatenate(waves)
     all_intercepts = np.concatenate(intercepts)
+    all_intercepts_unc = np.concatenate(intercepts_unc)
     all_slopes = np.concatenate(slopes)
+    all_slopes_unc = np.concatenate(slopes_unc)
 
     sindxs = np.argsort(all_waves)
     all_waves = all_waves[sindxs]
     all_npts = all_npts[sindxs]
     all_intercepts = all_intercepts[sindxs]
     all_slopes = all_slopes[sindxs]
+    all_intercepts_unc = all_intercepts_unc[sindxs]
+    all_slopes_unc = all_slopes_unc[sindxs]
 
     gvals = (all_npts > 0) & (all_waves >= wrange[0]) & (all_waves <= wrange[1])
 
     fit = LevMarLSQFitter()
-    or_fit = FittingWithOutlierRemoval(fit, sigma_clip, niter=3, sigma=3.0)
+    or_fit = FittingWithOutlierRemoval(fit, sigma_clip, niter=3, sigma=5.0)
     rejsym = "kx"
 
     # intercept
@@ -201,7 +162,10 @@ def plot_wavereg(ax, models, datasets, colors, wrange):
     #     cmodelinit, 1.0 / all_waves[gvals].value, all_intercepts[gvals], maxiter=500
     # )
     fitx = 1.0 / all_waves[gvals].value
-    cmodelfit, mask = or_fit(models[0], fitx, all_intercepts[gvals])
+    cmodelfit, mask = or_fit(
+        models[0], fitx, all_intercepts[gvals]
+    )  # , weights=1.0 / all_intercepts_unc[gvals]
+    # )
     filtered_data = np.ma.masked_array(all_intercepts[gvals], mask=~mask)
     fitted_models = [cmodelfit]
 
@@ -220,7 +184,10 @@ def plot_wavereg(ax, models, datasets, colors, wrange):
     ax[1].plot(all_waves[gvals], filtered_data2, rejsym, label="rejected")
 
     # slope
-    cmodelfit, mask = or_fit(models[1], fitx, all_slopes[gvals])
+    cmodelfit, mask = or_fit(
+        models[1], fitx, all_slopes[gvals]
+    )  # , weights=1.0 / all_slopes_unc[gvals]
+    # )
     filtered_data = np.ma.masked_array(all_slopes[gvals], mask=~mask)
     fitted_models.append(cmodelfit)
 
@@ -265,6 +232,13 @@ if __name__ == "__main__":
     dec22_spexsxd = QTable.read("results/dec22_spexsxd_irv_params.fits")
     dec22_spexlxd = QTable.read("results/dec22_spexlxd_irv_params.fits")
 
+    # adjust to match nir
+    # fit19_stis["hfintercepts"] -= 0.04
+
+    # remove UV from Fitzpatrick19 (only want the optical STIS data)
+    gvals = fit19_stis["waves"] > 0.30 * u.micron
+    fit19_stis = fit19_stis[gvals]
+
     aiue_iue = QTable.read("results/aiue_iue_irv_params.fits")
 
     # setup plot
@@ -294,13 +268,15 @@ if __name__ == "__main__":
     dec22_color = "red"
     dec22_color = "red"
     gor21_color = "purple"
-    aiue_color = "black"
+    aiue_color = "orange"
 
     # plot parameters
+    yrange_b_type = "linear"
+    yrange_s_type = "linear"
     if args.wavereg == "uv":
         gor09_res1 = plot_irv_ssamp(ax, gor09_fuse, "G09", color=gor09_color)
         alliue_res = plot_irv_ssamp(ax, aiue_iue, "All", color=aiue_color, inst="IUE")
-        xrange = [0.09, 0.32]
+        xrange = [0.09, 0.30]
         yrange_a_type = "linear"
         yrange_a = [1.0, 7.5]
         yrange_b = [1.0, 50.0]
@@ -315,23 +291,24 @@ if __name__ == "__main__":
         ax[1].set_ylim(-0.2, 0.2)
         ax[3].set_ylim(-3.0, 3.0)
     elif args.wavereg == "opt":
+        alliue_res = plot_irv_ssamp(ax, aiue_iue, "All", color=aiue_color, inst="IUE")
         fit19_res = plot_irv_ssamp(
             ax, fit19_stis, "F19", color=fit19_color, inst="STIS"
         )
         dec22_res1 = plot_irv_ssamp(ax, dec22_spexsxd, "D22", color=dec22_color)
-        xrange = [0.30, 1.0]
+        xrange = [0.27, 1.0]
         yrange_a_type = "linear"
-        yrange_a = [0.2, 2.0]
-        yrange_b = [-1.5, 3.5]
+        yrange_a = [0.2, 2.2]
+        yrange_b = [-1.5, 6.0]
         yrange_s = [0.0, 0.08]
         xticks = [0.3, 0.35, 0.45, 0.55, 0.7, 0.9, 1.0]
 
         # fitting
-        datasets = [fit19_res, dec22_res1]
-        colors = [fit19_color, dec22_color]
+        datasets = [alliue_res, fit19_res, dec22_res1]
+        colors = [aiue_color, fit19_color, dec22_color]
         # g22opt = G22opt()
         g22opt = (
-            Polynomial1D(4)
+            Polynomial1D(5)
             # Legendre1D(3)
             + Drude1D(amplitude=0.1, x_0=2.238, fwhm=0.243)
             + Drude1D(amplitude=0.1, x_0=2.054, fwhm=0.179)
@@ -342,15 +319,15 @@ if __name__ == "__main__":
         g22opt[1].fwhm.fixed = True
         g22opt[2].fwhm.fixed = True
         g22opt[3].fwhm.fixed = True
-        # g22opt[1].x_0.fixed = True
-        # g22opt[2].x_0.fixed = True
-        # g22opt[3].x_0.fixed = True
-        g22opt.x_range = [1.0 / 1.0, 1.0 / 0.3]
+        g22opt[1].x_0.fixed = True
+        g22opt[2].x_0.fixed = True
+        g22opt[3].x_0.fixed = True
+        g22opt.x_range = [1.0 / 1.0, 1.0 / 0.27]
         fitted_models = plot_wavereg(
-            ax, [g22opt, g22opt], datasets, colors, wrange=[0.30, 1.0] * u.micron
+            ax, [g22opt, g22opt], datasets, colors, wrange=[0.27, 1.1] * u.micron
         )
-        # ax[1].set_ylim(-0.2, 0.2)
-        ax[3].set_ylim(-0.2, 0.2)
+        ax[1].set_ylim(-0.03, 0.1)
+        ax[3].set_ylim(-0.3, 0.3)
 
         # plotting the components
         modx = np.linspace(0.30, 1.0, 100)
@@ -398,7 +375,7 @@ if __name__ == "__main__":
         gor21_res = plot_irv_ssamp(ax, gor21_irs, "G21", color=gor21_color)
         xrange = [0.8, 35.0]
         yrange_a_type = "log"
-        yrange_a = [0.02, 0.4]
+        yrange_a = [0.02, 0.6]
         yrange_b = [-1.0, 0.5]
         yrange_s = [0.0, 0.08]
         xticks = [1.0, 1.5, 2.0, 3.0, 4.0, 5.0, 7.0, 10.0, 15.0, 20.0, 30.0]
@@ -407,17 +384,23 @@ if __name__ == "__main__":
         datasets = [fit19_res, dec22_res1, dec22_res2, gor21_res]
         colors = [fit19_color, dec22_color, dec22_color, gor21_color]
         g21mod = G21mod()
-        g21mod.ice_amp.fixed = True
+        # g21mod.ice_amp.fixed = True
+        g21mod.swave.bounds = [3.0, 5.0]
         g21mod.ice_fwhm.fixed = True
         g21mod.ice_center.fixed = True
         g21mod.ice_asym.fixed = True
+        # g21mod.sil1_asym = -0.6
+        # g21mod.sil1_asym.fixed = True
 
-        irpow = G22pow()
+        # irpow = G22pow()
+        irpow = Polynomial1D(6)
+        irpow.x_range = [1.0 / 40.0, 1.0 / 0.8]
+
         plot_wavereg(
             ax, [g21mod, irpow], datasets, colors, wrange=[0.8, 40.0] * u.micron
         )
         ax[1].set_ylim(-0.015, 0.015)
-        # ax[3].set_ylim(-0.5, 0.5)
+        ax[3].set_ylim(-0.2, 0.2)
     else:
         gor09_res1 = plot_irv_ssamp(ax, gor09_fuse, "G09", color=gor09_color)
         alliue_res = plot_irv_ssamp(ax, aiue_iue, "All", color=aiue_color, inst="IUE")
@@ -436,9 +419,17 @@ if __name__ == "__main__":
         xrange = [0.09, 35.0]
         yrange_a_type = "log"
         yrange_a = [0.02, 7.5]
-        yrange_b = [-1.0, 50.0]
-        yrange_s = [0.0, 2.0]
-        xticks = [0.1, 1.0, 1.5, 2.0, 3.0, 4.0, 5.0, 7.0, 10.0, 15.0, 20.0, 30.0]
+        yrange_b_type = "symlog"
+        yrange_b = [-2.0, 50.0]
+        yrange_s_type = "log"
+        yrange_s = [0.001, 1.0]
+        xticks = [0.1, 0.2, 0.3, 0.5, 0.8, 1.0, 1.5, 2.0, 3.0, 4.0, 5.0, 7.0, 10.0, 15.0, 20.0, 30.0]
+
+        g22mod = G22(Rv=3.1)
+        modx = np.logspace(np.log10(0.091), np.log10(34.0), 1000) * u.micron
+        g22rv31 = g22mod(modx)
+        ax[0].plot(modx, g22mod.a, "k-", alpha=0.5)
+        ax[2].plot(modx, g22mod.b, "k-", alpha=0.5)
 
     # set the wavelength range for all the plots
     ax[4].set_xscale("log")
@@ -446,6 +437,8 @@ if __name__ == "__main__":
     ax[4].set_xlabel(r"$\lambda$ [$\mu$m]")
 
     ax[0].set_yscale(yrange_a_type)
+    ax[2].set_yscale(yrange_b_type)
+    ax[4].set_yscale(yrange_s_type)
     ax[0].set_ylim(yrange_a)
     ax[2].set_ylim(yrange_b)
     ax[4].set_ylim(yrange_s)

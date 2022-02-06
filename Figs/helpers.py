@@ -4,7 +4,142 @@ from astropy.modeling import Fittable1DModel, Parameter
 
 # from dust_extinction.shapes import G21
 from dust_extinction.helpers import _get_x_in_wavenumbers, _test_valid_x_range
-from dust_extinction.shapes import _modified_drude
+from dust_extinction.baseclasses import BaseExtRvModel
+from dust_extinction.shapes import _modified_drude, FM90
+
+
+x_range_G22 = [1.0 / 35.0, 1.0 / 0.09]
+
+
+class G22(BaseExtRvModel):
+    r"""
+    Gordon et al. (2022) Milky Way R(V) dependent model
+
+    Parameters
+    ----------
+    Rv: float
+        R(V) = A(V)/E(B-V) = total-to-selective extinction
+
+    Raises
+    ------
+    InputParameterError
+       Input Rv values outside of defined range
+
+    Notes
+    -----
+    From Gordon et al. (2022, in prep.)
+
+    Example showing CCM89 curves for a range of R(V) values.
+
+    .. plot::
+        :include-source:
+
+        import numpy as np
+        import matplotlib.pyplot as plt
+        import astropy.units as u
+
+        from dust_extinction.parameter_averages import G22
+
+        fig, ax = plt.subplots()
+
+        # generate the curves and plot them
+        x = np.arange(0.5,10.0,0.1)/u.micron
+
+        Rvs = ['2.0','3.0','4.0','5.0','6.0']
+        for cur_Rv in Rvs:
+           ext_model = G22(Rv=cur_Rv)
+           ax.plot(x,ext_model(x),label='R(V) = ' + str(cur_Rv))
+
+        ax.set_xlabel(r'$x$ [$\mu m^{-1}$]')
+        ax.set_ylabel(r'$A(x)/A(V)$')
+
+        ax.legend(loc='best')
+        plt.show()
+    """
+
+    Rv_range = [2.0, 6.0]
+    x_range = x_range_G22
+
+    def evaluate(self, in_x, Rv):
+        """
+        G22 function
+
+        Parameters
+        ----------
+        in_x: float
+           expects either x in units of wavelengths or frequency
+           or assumes wavelengths in wavenumbers [1/micron]
+
+           internally wavenumbers are used
+
+        Returns
+        -------
+        axav: np array (float)
+            A(x)/A(V) extinction curve [mag]
+
+        Raises
+        ------
+        ValueError
+           Input x values outside of defined range
+        """
+        x = _get_x_in_wavenumbers(in_x)
+
+        # check that the wavenumbers are within the defined range
+        _test_valid_x_range(x, self.x_range, "G22")
+
+        # setup the a & b coefficient vectors
+        n_x = len(x)
+        self.a = np.zeros(n_x)
+        self.b = np.zeros(n_x)
+
+        # define the ranges
+        ir_indxs = np.where(np.logical_and(1.0 / 35.0 <= x, x < 1.0 / 1.0))
+        opt_indxs = np.where(np.logical_and(1.0 / 1.0 <= x, x < 1.0 / 0.3))
+        uv_indxs = np.where(np.logical_and(1.0 / 0.3 <= x, x <= 1.0 / 0.09))
+
+        # NIR/MIR
+
+        # optical
+
+        # Ultrviolet
+        params_intercept = [
+            0.84003414,
+            0.28206022,
+            1.05119322,
+            0.11807519,
+            4.59999236,
+            0.99000999,
+        ]
+        fm90_model_a = FM90(
+            C1=params_intercept[0],
+            C2=params_intercept[1],
+            C3=params_intercept[2],
+            C4=params_intercept[3],
+            xo=params_intercept[4],
+            gamma=params_intercept[5],
+        )
+        self.a[uv_indxs] = fm90_model_a(x[uv_indxs])
+
+        params_slope = [
+            -3.47808977,
+            2.15608243,
+            4.35597383,
+            1.01607364,
+            4.60001101,
+            0.98997783,
+        ]
+        fm90_model_b = FM90(
+            C1=params_slope[0],
+            C2=params_slope[1],
+            C3=params_slope[2],
+            C4=params_slope[3],
+            xo=params_slope[4],
+            gamma=params_slope[5],
+        )
+        self.b[uv_indxs] = fm90_model_b(x[uv_indxs])
+
+        # return A(x)/A(V)
+        return self.a + self.b / Rv
 
 
 class G21mod(Fittable1DModel):
