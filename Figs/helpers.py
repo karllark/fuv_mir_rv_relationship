@@ -2,13 +2,15 @@ import numpy as np
 
 from astropy.modeling import Fittable1DModel, Parameter
 
+from astropy.modeling.models import Drude1D, Polynomial1D, PowerLaw1D
+
 # from dust_extinction.shapes import G21
 from dust_extinction.helpers import _get_x_in_wavenumbers, _test_valid_x_range
 from dust_extinction.baseclasses import BaseExtRvModel
 from dust_extinction.shapes import _modified_drude, FM90
 
 
-x_range_G22 = [1.0 / 35.0, 1.0 / 0.09]
+x_range_G22 = [1.0 / 45.0, 1.0 / 0.08]
 
 
 class G22(BaseExtRvModel):
@@ -98,45 +100,49 @@ class G22(BaseExtRvModel):
         uv_indxs = np.where(np.logical_and(1.0 / 0.3 <= x, x <= 1.0 / 0.09))
 
         # NIR/MIR
+        # fmt: off
+        # (scale, alpha1, alpha2, swave), ice, sil1, sil2
+        ir_a = [0.37868, 1.72792, 0.1502, 5.,
+                0.00445, 3.02, 0.45, -1.,
+                0.05904, 9.8381, 2.00816, -0.16789,
+                0.01711, 19.02027, 20., -0.5256]
+        ir_b = [-1.07917, 1., -1.18025]
+        # fmt: on
+        g21mod = G21mod()
+        g21mod.parameters = ir_a
+        self.a[ir_indxs] = g21mod(x[ir_indxs])
+
+        irpow = PowerLaw1D()
+        irpow.parameters = ir_b
+        self.b[ir_indxs] = irpow(x[ir_indxs])
 
         # optical
+        # fmt: off
+        # polynomial coeffs, ISS1, ISS2, ISS3
+        opt_a = [-1.45443, 3.55138, -2.72229, 1.28108, -0.29903, 0.02714,
+                 0.03309, 2.238, 0.243,
+                 0.02605, 2.054, 0.179,
+                 0.02062, 1.587, 0.243]
+        opt_b = [4.03455, -14.9946, 16.35544, -8.19947, 2.04049, -0.19609,
+                 0.23486, 2.238, 0.243,
+                 0.11975, 2.054, 0.179,
+                 0.19201, 1.587, 0.243]
+        # fmt: on
+        m20_model = Polynomial1D(5) + Drude1D() + Drude1D() + Drude1D()
+        m20_model.parameters = opt_a
+        self.a[opt_indxs] = m20_model(x[opt_indxs])
+        m20_model.parameters = opt_b
+        self.b[opt_indxs] = m20_model(x[opt_indxs])
 
-        # Ultrviolet
-        params_intercept = [
-            0.84003414,
-            0.28206022,
-            1.05119322,
-            0.11807519,
-            4.59999236,
-            0.99000999,
-        ]
-        fm90_model_a = FM90(
-            C1=params_intercept[0],
-            C2=params_intercept[1],
-            C3=params_intercept[2],
-            C4=params_intercept[3],
-            xo=params_intercept[4],
-            gamma=params_intercept[5],
-        )
-        self.a[uv_indxs] = fm90_model_a(x[uv_indxs])
+        # Ultraviolet
+        uv_a = [0.7781, 0.28296, 1.12103, 0.12758, 4.59999, 0.99004]
+        uv_b = [-4.4206, 2.19942, 5.19608, 0.97013, 4.6, 0.99001]
 
-        params_slope = [
-            -3.47808977,
-            2.15608243,
-            4.35597383,
-            1.01607364,
-            4.60001101,
-            0.98997783,
-        ]
-        fm90_model_b = FM90(
-            C1=params_slope[0],
-            C2=params_slope[1],
-            C3=params_slope[2],
-            C4=params_slope[3],
-            xo=params_slope[4],
-            gamma=params_slope[5],
-        )
-        self.b[uv_indxs] = fm90_model_b(x[uv_indxs])
+        fm90_model = FM90()
+        fm90_model.parameters = uv_a
+        self.a[uv_indxs] = fm90_model(x[uv_indxs])
+        fm90_model.parameters = uv_b
+        self.b[uv_indxs] = fm90_model(x[uv_indxs])
 
         # return A(x)/A(V)
         return self.a + self.b / Rv

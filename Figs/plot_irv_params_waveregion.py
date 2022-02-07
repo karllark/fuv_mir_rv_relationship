@@ -3,12 +3,17 @@ import matplotlib.pyplot as plt
 from matplotlib.ticker import ScalarFormatter
 import numpy as np
 
+import warnings
+
 from astropy.table import QTable
 import astropy.units as u
 from astropy.stats import sigma_clip
 from astropy.modeling.fitting import LevMarLSQFitter, FittingWithOutlierRemoval
-from astropy.modeling.models import Drude1D, Polynomial1D  # , Legendre1D
-
+from astropy.modeling.models import (
+    Drude1D,
+    Polynomial1D,
+    PowerLaw1D,
+)
 from dust_extinction.shapes import FM90
 
 from helpers import G21mod, G22  # , G22pow  # , G22opt
@@ -123,6 +128,8 @@ def plot_wavereg(ax, models, datasets, colors, wrange, no_weights=False):
     """
     Do the fits and plot the fits and residuals
     """
+    warnings.filterwarnings("ignore")
+
     npts = []
     waves = []
     intercepts = []
@@ -173,9 +180,10 @@ def plot_wavereg(ax, models, datasets, colors, wrange, no_weights=False):
     filtered_data = np.ma.masked_array(all_intercepts[gvals], mask=~mask)
     fitted_models = [cmodelfit]
 
+    np.set_printoptions(precision=5, suppress=True)
     print("intercepts")
     print(cmodelfit.param_names)
-    print(cmodelfit.parameters)
+    print(repr(cmodelfit.parameters))
 
     ax[0].plot(all_waves[gvals], cmodelfit(fitx))
     ax[0].plot(all_waves[gvals], filtered_data, rejsym, label="rejected")
@@ -196,7 +204,7 @@ def plot_wavereg(ax, models, datasets, colors, wrange, no_weights=False):
 
     print("slopes")
     print(cmodelfit.param_names)
-    print(cmodelfit.parameters)
+    print(repr(cmodelfit.parameters))
 
     ax[2].plot(all_waves[gvals], cmodelfit(fitx))
     ax[2].plot(all_waves[gvals], filtered_data, rejsym, label="rejected")
@@ -390,9 +398,9 @@ if __name__ == "__main__":
         ax[2].plot(modx, fitted_models[1][0](1.0 / modx), "k:")
 
     elif args.wavereg == "ir":
-        # fit19_res = plot_irv_ssamp(
-        #     ax, fit19_stis, "F19", color=fit19_color, inst="STIS"
-        # )
+        fit19_res = plot_irv_ssamp(
+            ax, fit19_stis, "F19", color=fit19_color, inst="STIS"
+        )
         dec22_res1 = plot_irv_ssamp(ax, dec22_spexsxd, "D22", color=dec22_color)
         dec22_res2 = plot_irv_ssamp(
             ax,
@@ -404,26 +412,31 @@ if __name__ == "__main__":
         gor21_res = plot_irv_ssamp(ax, gor21_irs, "G21", color=gor21_color)
         xrange = [0.8, 35.0]
         yrange_a_type = "log"
-        yrange_a = [0.02, 0.6]
-        yrange_b = [-1.0, 0.5]
+        yrange_a = [0.005, 0.6]
+        yrange_b = [-1.5, 0.5]
         yrange_s = [0.0, 0.08]
         xticks = [1.0, 1.5, 2.0, 3.0, 4.0, 5.0, 7.0, 10.0, 15.0, 20.0, 30.0]
 
         # fitting
-        datasets = [dec22_res1, dec22_res2, gor21_res]
-        colors = [dec22_color, dec22_color, gor21_color]
+        datasets = [fit19_res, dec22_res1, dec22_res2, gor21_res]
+        colors = [fit19_color, dec22_color, dec22_color, gor21_color]
         g21mod = G21mod()
         # g21mod.ice_amp.fixed = True
         g21mod.swave.bounds = [3.0, 5.0]
         g21mod.ice_fwhm.fixed = True
         g21mod.ice_center.fixed = True
         g21mod.ice_asym.fixed = True
-        # g21mod.sil1_asym = -0.6
-        # g21mod.sil1_asym.fixed = True
+        # g21mod.sil2_asym = -0.6
+        # g21mod.sil2_asym.fixed = True
 
         # irpow = G22pow()
-        irpow = Polynomial1D(6)
-        irpow.x_range = [1.0 / 40.0, 1.0 / 0.8]
+        # irpow = Polynomial1D(6)
+        # irpow.x_range = [1.0 / 40.0, 1.0 / 0.8]
+        irpow = PowerLaw1D()
+        irpow.x_range = [1.0 / 40.0, 1.0 / 0.95]
+        irpow.scale = -1.0
+        irpow.x_0 = 1.0
+        irpow.x_0.fixed = True
 
         plot_wavereg(
             ax,
@@ -434,7 +447,7 @@ if __name__ == "__main__":
             no_weights=False,
         )
         ax[1].set_ylim(-0.015, 0.015)
-        ax[3].set_ylim(-0.2, 0.2)
+        ax[3].set_ylim(-0.2, 0.4)
     else:
         gor09_res1 = plot_irv_ssamp(ax, gor09_fuse, "G09", color=gor09_color)
         alliue_res = plot_irv_ssamp(ax, aiue_iue, "All", color=aiue_color, inst="IUE")
@@ -481,6 +494,44 @@ if __name__ == "__main__":
         g22rv31 = g22mod(modx)
         ax[0].plot(modx, g22mod.a, "k-", alpha=0.5)
         ax[2].plot(modx, g22mod.b, "k-", alpha=0.5)
+
+        datasets = [
+            gor09_res1,
+            alliue_res,
+            fit19_res,
+            dec22_res1,
+            dec22_res2,
+            gor21_res,
+        ]
+        colors = [
+            gor09_color,
+            aiue_color,
+            fit19_color,
+            dec22_color,
+            dec22_color,
+            gor21_color,
+        ]
+
+        # (data[dindx][gvals] - model(fitx)) / model(fitx),
+
+        for cdata, ccolor in zip(datasets, colors):
+            cmodelfit = g22mod(cdata[1])
+            ax[1].plot(
+                cdata[1],
+                # (cdata[2] - g22mod.a) / g22mod.a,
+                cdata[2] - g22mod.a,
+                color=ccolor,
+                alpha=0.75,
+            )
+            ax[3].plot(
+                cdata[1],
+                # (cdata[3] - g22mod.b) / g22mod.b,
+                cdata[3] - g22mod.b,
+                color=ccolor,
+                alpha=0.75,
+            )
+        ax[1].set_ylim(-0.05, 0.05)
+        ax[3].set_ylim(-1.0, 1.0)
 
     # set the wavelength range for all the plots
     ax[4].set_xscale("log")
