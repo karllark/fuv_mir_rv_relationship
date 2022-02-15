@@ -1,3 +1,4 @@
+import copy
 import argparse
 import matplotlib.pyplot as plt
 from matplotlib.ticker import ScalarFormatter
@@ -274,17 +275,34 @@ if __name__ == "__main__":
         constrained_layout=True,
     )
 
-    gor09_color = "blue"
-    fit19_color = "green"
-    dec22_color = "red"
-    dec22_color = "red"
-    gor21_color = "purple"
-    aiue_color = "orange"
+    gor09_color = "blueviolet"
+    fit19_color = "mediumseagreen"
+    dec22_color = "darkorange"
+    gor21_color = "salmon"
+    aiue_color = "royalblue"
 
     # plot parameters
     yrange_b_type = "linear"
     yrange_s_type = "linear"
+    props = dict(boxstyle="round", facecolor="white", alpha=0.5)
+    leg_loc = "lower left"
     if args.wavereg == "uv":
+        leg_loc = "upper right"
+        labels = ["G09", "All", "F19"]
+        label_colors = [gor09_color, aiue_color, fit19_color]
+        label_xpos = [0.105, 0.2, 0.315]
+        label_ypos = 7.0
+        for clabel, cxpos, ccolor in zip(labels, label_xpos, label_colors):
+            ax[0].text(
+                cxpos,
+                label_ypos,
+                clabel,
+                color=ccolor,
+                bbox=props,
+                ha="center",
+                fontsize=0.8 * fontsize,
+            )
+
         gor09_res1 = plot_irv_ssamp(ax, gor09_fuse, "G09", color=gor09_color)
         alliue_res = plot_irv_ssamp(ax, aiue_iue, "All", color=aiue_color, inst="IUE")
         fit19_res = plot_irv_ssamp(
@@ -292,7 +310,7 @@ if __name__ == "__main__":
         )
         xrange = [0.09, 0.33]
         yrange_a_type = "linear"
-        yrange_a = [1.0, 7.5]
+        yrange_a = [1.0, 8.0]
         yrange_b = [1.0, 50.0]
         yrange_s = [0.0, 1.5]
         xticks = [0.09, 0.1, 0.12, 0.15, 0.2, 0.25, 0.3]
@@ -314,10 +332,62 @@ if __name__ == "__main__":
         datasets = [alliue_res, gor09_res1, fit19_res]
         colors = [aiue_color, gor09_color, fit19_color]
         fm90 = FM90()
-        plot_wavereg(ax, [fm90, fm90], datasets, colors, wrange=[0.09, 0.33] * u.micron)
+        fitted_models = plot_wavereg(
+            ax, [fm90, fm90], datasets, colors, wrange=[0.09, 0.33] * u.micron
+        )
         ax[1].set_ylim(-0.2, 0.2)
         ax[3].set_ylim(-3.0, 3.0)
+
+        # annotate features
+        ax[0].annotate(
+            "2175 A",
+            (0.2175, 4.0),
+            ha="center",
+            fontsize=0.7 * fontsize,
+            alpha=0.7,
+            bbox=props,
+        )
+        ax[0].annotate(
+            "far-UV rise",
+            (0.105, 5.5),
+            ha="left",
+            fontsize=0.7 * fontsize,
+            alpha=0.7,
+            bbox=props,
+        )
+
+        # plotting the components
+        modx = np.linspace(0.09, 0.33, 100) * u.micron
+        tmodel = copy.deepcopy(fitted_models[0])
+        tmodel.C3 = 0.0
+        tmodel.C4 = 0.0
+        ax[0].plot(modx, tmodel(modx), "k--")
+
+        tmodel = copy.deepcopy(fitted_models[0])
+        tmodel.C3 = 0.0
+        ax[0].plot(modx, tmodel(modx), "k:")
+
+        tmodel = copy.deepcopy(fitted_models[0])
+        tmodel.C4 = 0.0
+        ax[0].plot(modx, tmodel(modx), "k:")
+
     elif args.wavereg == "opt":
+        leg_loc = "upper right"
+        labels = ["F19", "D22"]
+        label_colors = [fit19_color, dec22_color]
+        label_xpos = [0.5, 0.95]
+        label_ypos = 1.8
+        for clabel, cxpos, ccolor in zip(labels, label_xpos, label_colors):
+            ax[0].text(
+                cxpos,
+                label_ypos,
+                clabel,
+                color=ccolor,
+                bbox=props,
+                ha="center",
+                fontsize=0.8 * fontsize,
+            )
+
         # alliue_res = plot_irv_ssamp(ax, aiue_iue, "All", color=aiue_color, inst="IUE")
         fit19_res = plot_irv_ssamp(
             ax, fit19_stis, "F19", color=fit19_color, inst="STIS"
@@ -325,7 +395,7 @@ if __name__ == "__main__":
         dec22_res1 = plot_irv_ssamp(ax, dec22_spexsxd, "D22", color=dec22_color)
         xrange = [0.30, 1.1]
         yrange_a_type = "linear"
-        yrange_a = [0.2, 2.2]
+        yrange_a = [0.2, 2.0]
         yrange_b = [-1.5, 6.0]
         yrange_s = [0.0, 0.08]
         xticks = [0.3, 0.35, 0.45, 0.55, 0.7, 0.9, 1.0]
@@ -364,7 +434,24 @@ if __name__ == "__main__":
             no_weights=True,
         )
         ax[1].set_ylim(-0.03, 0.1)
-        ax[3].set_ylim(-0.3, 0.3)
+        ax[3].set_ylim(-0.3, 0.4)
+
+        # annotate features
+        flabels = [
+            "ISS1\n%.4f" % (1.0 / 2.238),
+            "ISS2\n%.4f" % (1.0 / 2.054),
+            "ISS3\n%.4f" % (1.0 / 1.587),
+        ]
+        fpos = [(1.0 / 2.238, 0.85), (1.0 / 2.054, 0.6), (1.0 / 1.587, 0.4)]
+        for clab, cpos in zip(flabels, fpos):
+            ax[0].annotate(
+                clab,
+                cpos,
+                ha="center",
+                fontsize=0.7 * fontsize,
+                alpha=0.7,
+                bbox=props,
+            )
 
         # plotting the components
         modx = np.linspace(0.30, 1.0, 100)
@@ -377,27 +464,45 @@ if __name__ == "__main__":
         ax[1].plot(
             datasets[0][1][gvals].value,
             datasets[0][2][gvals] - fitted_models[0][0](fitx),
-            "k--",
-        )
-        ax[1].plot(
-            datasets[0][1][gvals].value,
-            fitted_models[0][1](fitx),
             "k:",
         )
-        ax[1].plot(
-            datasets[0][1][gvals].value,
-            fitted_models[0][2](fitx),
-            "k:",
-        )
-        ax[1].plot(
-            datasets[0][1][gvals].value,
-            fitted_models[0][3](fitx),
-            "k:",
-        )
+        for k in range(3):
+            ax[1].plot(
+                datasets[0][1][gvals].value,
+                fitted_models[0][k + 1](fitx),
+                "k--",
+            )
 
         ax[2].plot(modx, fitted_models[1][0](1.0 / modx), "k:")
 
+        ax[3].plot(
+            datasets[0][1][gvals].value,
+            datasets[0][3][gvals] - fitted_models[1][0](fitx),
+            "k:",
+        )
+        for k in range(3):
+            ax[3].plot(
+                datasets[0][1][gvals].value,
+                fitted_models[1][k + 1](fitx),
+                "k--",
+            )
+
     elif args.wavereg == "ir":
+        labels = ["F19", "D22", "G21"]
+        label_colors = [fit19_color, dec22_color, gor21_color]
+        label_xpos = [0.9, 2.0, 12.0]
+        label_ypos = 0.8
+        for clabel, cxpos, ccolor in zip(labels, label_xpos, label_colors):
+            ax[0].text(
+                cxpos,
+                label_ypos,
+                clabel,
+                color=ccolor,
+                bbox=props,
+                ha="center",
+                fontsize=0.8 * fontsize,
+            )
+
         fit19_res = plot_irv_ssamp(
             ax, fit19_stis, "F19", color=fit19_color, inst="STIS"
         )
@@ -412,7 +517,7 @@ if __name__ == "__main__":
         gor21_res = plot_irv_ssamp(ax, gor21_irs, "G21", color=gor21_color)
         xrange = [0.8, 35.0]
         yrange_a_type = "log"
-        yrange_a = [0.005, 0.6]
+        yrange_a = [0.01, 1.3]
         yrange_b = [-1.5, 0.5]
         yrange_s = [0.0, 0.08]
         xticks = [1.0, 1.5, 2.0, 3.0, 4.0, 5.0, 7.0, 10.0, 15.0, 20.0, 30.0]
@@ -438,7 +543,7 @@ if __name__ == "__main__":
         irpow.x_0 = 1.0
         irpow.x_0.fixed = True
 
-        plot_wavereg(
+        fitted_models = plot_wavereg(
             ax,
             [g21mod, irpow],
             datasets,
@@ -448,7 +553,76 @@ if __name__ == "__main__":
         )
         ax[1].set_ylim(-0.015, 0.015)
         ax[3].set_ylim(-0.2, 0.4)
+
+        # plotting the components
+        modx = np.linspace(0.8, 35.0, 100) * u.micron
+        tmodel = copy.deepcopy(fitted_models[0])
+        tmodel.ice_amp = 0.0
+        tmodel.sil1_amp = 0.0
+        tmodel.sil2_amp = 0.0
+        ax[0].plot(modx, tmodel(modx), "k--")
+
+        tmodel = copy.deepcopy(fitted_models[0])
+        tmodel.ice_amp = 0.0
+        tmodel.sil2_amp = 0.0
+        ax[0].plot(modx, tmodel(modx), "k:")
+
+        tmodel = copy.deepcopy(fitted_models[0])
+        tmodel.ice_amp = 0.0
+        tmodel.sil1_amp = 0.0
+        ax[0].plot(modx, tmodel(modx), "k:")
+
+        tmodel = copy.deepcopy(fitted_models[0])
+        tmodel.ice_amp = 0.0
+        for k in range(3):
+            gvals = (datasets[k][1].value >= 0.8) & (datasets[k][1].value <= 35.0)
+            fitx = 1.0 / datasets[k][1][gvals].value
+            ax[1].plot(
+                datasets[k][1][gvals].value,
+                datasets[k][2][gvals] - tmodel(fitx),
+                "k:",
+            )
+
+        tmodel = copy.deepcopy(fitted_models[0])
+        tmodel.scale = 0.0
+        tmodel.sil1_amp = 0.0
+        tmodel.sil2_amp = 0.0
+        ax[1].plot(modx, tmodel(modx), "k:")
+
+        # annotate features
+        flabels = [
+            "Ice \n " + r"3 $\mu$m",
+            "Silicate\n " + r"10 $\mu$m",
+            "Silicate\n " + r"20 $\mu$m",
+        ]
+        fpos = [(3.0, 0.1), (10.0, 0.15), (20.0, 0.12)]
+        for clab, cpos in zip(flabels, fpos):
+            ax[0].annotate(
+                clab,
+                cpos,
+                ha="center",
+                fontsize=0.7 * fontsize,
+                alpha=0.7,
+                bbox=props,
+            )
+
     else:
+        leg_loc = "upper center"
+        labels = ["G09", "All", "F19", "D22", "G21"]
+        label_colors = [gor09_color, aiue_color, fit19_color, dec22_color, gor21_color]
+        label_xpos = [0.105, 0.2, 0.5, 2.0, 12.0]
+        label_ypos = 10.0
+        for clabel, cxpos, ccolor in zip(labels, label_xpos, label_colors):
+            ax[0].text(
+                cxpos,
+                label_ypos,
+                clabel,
+                color=ccolor,
+                bbox=props,
+                ha="center",
+                fontsize=0.8 * fontsize,
+            )
+
         gor09_res1 = plot_irv_ssamp(ax, gor09_fuse, "G09", color=gor09_color)
         alliue_res = plot_irv_ssamp(ax, aiue_iue, "All", color=aiue_color, inst="IUE")
         fit19_res = plot_irv_ssamp(
@@ -465,7 +639,7 @@ if __name__ == "__main__":
         gor21_res = plot_irv_ssamp(ax, gor21_irs, "G21", color=gor21_color)
         xrange = [0.09, 35.0]
         yrange_a_type = "log"
-        yrange_a = [0.02, 7.5]
+        yrange_a = [0.02, 20.0]
         yrange_b_type = "symlog"
         yrange_b = [-2.0, 50.0]
         yrange_s_type = "log"
@@ -475,16 +649,13 @@ if __name__ == "__main__":
             0.2,
             0.3,
             0.5,
-            0.8,
+            0.7,
             1.0,
-            1.5,
             2.0,
             3.0,
-            4.0,
             5.0,
             7.0,
             10.0,
-            15.0,
             20.0,
             30.0,
         ]
@@ -533,6 +704,24 @@ if __name__ == "__main__":
         ax[1].set_ylim(-0.05, 0.05)
         ax[3].set_ylim(-1.0, 1.0)
 
+        # annotate features
+        flabels = [
+            "Carbonaceous\n2175 " + r"$\AA$",
+            "Silicate\n " + r"10 $\mu$m",
+            "Silicate\n " + r"20 $\mu$m",
+        ]
+        fpos = [(0.2175, 0.3), (10.0, 0.15), (20.0, 0.15)]
+        for clab, cpos in zip(flabels, fpos):
+            ax[0].annotate(
+                clab,
+                cpos,
+                va="bottom",
+                ha="center",
+                fontsize=0.7 * fontsize,
+                alpha=0.7,
+                bbox=props,
+            )
+
     # set the wavelength range for all the plots
     ax[4].set_xscale("log")
     ax[4].set_xlim(xrange)
@@ -554,11 +743,26 @@ if __name__ == "__main__":
     for i in range(5):
         ax[i].axhline(linestyle="--", alpha=0.25, color="k", linewidth=2)
 
-    ax[0].legend(ncol=2)
+    # ax[0].legend(ncol=2, loc=leg_loc, fontsize=0.8 * fontsize)
 
     ax[4].xaxis.set_major_formatter(ScalarFormatter())
     ax[4].xaxis.set_minor_formatter(ScalarFormatter())
     ax[4].set_xticks(xticks, minor=True)
+
+    if args.wavereg == "all":
+        ax[0].yaxis.set_major_formatter(ScalarFormatter())
+        ax[0].yaxis.set_minor_formatter(ScalarFormatter())
+        ax[0].set_yticks([0.1, 1.0, 10.0], minor=True)
+        ax[2].yaxis.set_major_formatter(ScalarFormatter())
+        ax[2].yaxis.set_minor_formatter(ScalarFormatter())
+        ax[2].set_yticks([-1.0, 1.0, 10.0], minor=True)
+        ax[4].yaxis.set_major_formatter(ScalarFormatter())
+        ax[4].yaxis.set_minor_formatter(ScalarFormatter())
+        ax[4].set_yticks([0.001, 0.01, 0.1, 1.0], minor=True)
+    elif args.wavereg == "ir":
+        ax[0].yaxis.set_major_formatter(ScalarFormatter())
+        ax[0].yaxis.set_minor_formatter(ScalarFormatter())
+        ax[0].set_yticks([0.01, 0.1, 1.0], minor=True)
 
     fname = f"fuv_mir_rv_fit_params_{args.wavereg}"
     if args.png:
