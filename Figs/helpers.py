@@ -1,4 +1,5 @@
 import numpy as np
+from scipy.special import comb
 
 from astropy.modeling import Fittable1DModel, Parameter
 
@@ -11,6 +12,18 @@ from dust_extinction.shapes import _modified_drude, FM90
 
 
 x_range_G22 = [1.0 / 45.0, 1.0 / 0.08]
+
+
+def smoothstep(x, x_min=0, x_max=1, N=1):
+    x = np.clip((x - x_min) / (x_max - x_min), 0, 1)
+
+    result = 0
+    for n in range(0, N + 1):
+        result += comb(N + n, n) * comb(2 * N + 1, N - n) * (-x) ** n
+
+    result *= x ** (N + 1)
+
+    return result
 
 
 class G22(BaseExtRvModel):
@@ -99,13 +112,18 @@ class G22(BaseExtRvModel):
         opt_indxs = np.where(np.logical_and(1.0 / 1.0 <= x, x < 1.0 / 0.3))
         uv_indxs = np.where(np.logical_and(1.0 / 0.3 <= x, x <= 1.0 / 0.09))
 
+        # overlap ranges
+        optir_waves = [1.0, 1.1]
+        optir_overlap = (x >= 1.0 / optir_waves[1]) & (x <= 1.0 / optir_waves[0])
+        uvopt_waves = [0.3, 0.33]
+        uvopt_overlap = (x >= 1.0 / uvopt_waves[1]) & (x <= 1.0 / uvopt_waves[0])
+
         # NIR/MIR
         # fmt: off
-        # (scale, alpha1, alpha2, swave), ice, sil1, sil2
-        ir_a = [0.37868, 1.72792, 0.1502, 5.,
-                0.00445, 3.02, 0.45, -1.,
-                0.05904, 9.8381, 2.00816, -0.16789,
-                0.01711, 19.02027, 20., -0.5256]
+        # (scale, alpha1, alpha2, swave, swidth), sil1, sil2
+        ir_a = [0.37591, 1.64271, 0.64907, 4.32372, 7.07545,
+                0.0604, 9.81385, 2.02153, -0.29642,
+                0.02868, 20.56499, 20., -0.27]
         ir_b = [-1.07917, 1., -1.18025]
         # fmt: on
         g21mod = G21mod()
@@ -128,21 +146,41 @@ class G22(BaseExtRvModel):
                  0.11975, 2.054, 0.179,
                  0.19201, 1.587, 0.243]
         # fmt: on
-        m20_model = Polynomial1D(5) + Drude1D() + Drude1D() + Drude1D()
-        m20_model.parameters = opt_a
-        self.a[opt_indxs] = m20_model(x[opt_indxs])
-        m20_model.parameters = opt_b
-        self.b[opt_indxs] = m20_model(x[opt_indxs])
+        m20_model_a = Polynomial1D(5) + Drude1D() + Drude1D() + Drude1D()
+        m20_model_a.parameters = opt_a
+        self.a[opt_indxs] = m20_model_a(x[opt_indxs])
+        m20_model_b = Polynomial1D(5) + Drude1D() + Drude1D() + Drude1D()
+        m20_model_b.parameters = opt_b
+        self.b[opt_indxs] = m20_model_b(x[opt_indxs])
+
+        # overlap between optica/ir
+        weights = (1.0 / optir_waves[1] - x[optir_overlap]) / (
+            1.0 / optir_waves[1] - 1.0 / optir_waves[0]
+        )
+        self.a[optir_overlap] = weights * m20_model_a(x[optir_overlap])
+        self.a[optir_overlap] += (1.0 - weights) * g21mod(x[optir_overlap])
+        self.b[optir_overlap] = weights * m20_model_b(x[optir_overlap])
+        self.b[optir_overlap] += (1.0 - weights) * irpow(x[optir_overlap])
 
         # Ultraviolet
         uv_a = [0.7781, 0.28296, 1.12103, 0.12758, 4.59999, 0.99004]
         uv_b = [-4.4206, 2.19942, 5.19608, 0.97013, 4.6, 0.99001]
 
-        fm90_model = FM90()
-        fm90_model.parameters = uv_a
-        self.a[uv_indxs] = fm90_model(x[uv_indxs])
-        fm90_model.parameters = uv_b
-        self.b[uv_indxs] = fm90_model(x[uv_indxs])
+        fm90_model_a = FM90()
+        fm90_model_a.parameters = uv_a
+        self.a[uv_indxs] = fm90_model_a(x[uv_indxs])
+        fm90_model_b = FM90()
+        fm90_model_b.parameters = uv_b
+        self.b[uv_indxs] = fm90_model_b(x[uv_indxs])
+
+        # overlap between uv/optical
+        weights = (1.0 / uvopt_waves[1] - x[uvopt_overlap]) / (
+            1.0 / uvopt_waves[1] - 1.0 / uvopt_waves[0]
+        )
+        self.a[uvopt_overlap] = weights * fm90_model_a(x[uvopt_overlap])
+        self.a[uvopt_overlap] += (1.0 - weights) * m20_model_a(x[uvopt_overlap])
+        self.b[uvopt_overlap] = weights * fm90_model_b(x[uvopt_overlap])
+        self.b[uvopt_overlap] += (1.0 - weights) * m20_model_b(x[uvopt_overlap])
 
         # return A(x)/A(V)
         return self.a + self.b / Rv
@@ -219,16 +257,17 @@ class G21mod(Fittable1DModel):
     alpha = Parameter(description="powerlaw: alpha", default=1.7, bounds=(0.5, 5.0))
     alpha2 = Parameter(description="powerlaw: alpha2", default=1.4, bounds=(-0.5, 5.0))
     swave = Parameter(description="powerlaw: swave", default=4.0, bounds=(2.0, 10.0))
-    ice_amp = Parameter(
-        description="ice 3um: amplitude", default=0.0019, bounds=(0.0001, 0.3)
-    )
-    ice_center = Parameter(
-        description="ice 3um: center", default=3.02, bounds=(2.9, 3.1)
-    )
-    ice_fwhm = Parameter(description="ice 3um: fwhm", default=0.45, bounds=(0.3, 0.6))
-    ice_asym = Parameter(
-        description="ice 3um: asymmetry", default=-1.0, bounds=(-2.0, 0.0)
-    )
+    swidth = Parameter(description="powerlaw: swidth", default=1.0, bounds=(0.5, 1.5))
+    # ice_amp = Parameter(
+    #     description="ice 3um: amplitude", default=0.0019, bounds=(0.0001, 0.3)
+    # )
+    # ice_center = Parameter(
+    #     description="ice 3um: center", default=3.02, bounds=(2.9, 3.1)
+    # )
+    # ice_fwhm = Parameter(description="ice 3um: fwhm", default=0.45, bounds=(0.3, 0.6))
+    # ice_asym = Parameter(
+    #     description="ice 3um: asymmetry", default=-1.0, bounds=(-2.0, 0.0)
+    # )
     sil1_amp = Parameter(
         description="silicate 10um: amplitude", default=0.07, bounds=(0.001, 0.3)
     )
@@ -263,10 +302,11 @@ class G21mod(Fittable1DModel):
         alpha,
         alpha2,
         swave,
-        ice_amp,
-        ice_center,
-        ice_fwhm,
-        ice_asym,
+        swidth,
+        # ice_amp,
+        # ice_center,
+        # ice_fwhm,
+        # ice_asym,
         sil1_amp,
         sil1_center,
         sil1_fwhm,
@@ -302,16 +342,26 @@ class G21mod(Fittable1DModel):
 
         wave = 1 / x
 
-        # broken powerlaw
-        # swave = 4.0
-        axav = scale * (wave ** (-1.0 * alpha))
-        (gindxs,) = np.where(wave > swave)
-        if len(gindxs) > 0:
-            norm_ratio = swave ** (-1.0 * alpha) / swave ** (-1.0 * alpha2)
-            axav[gindxs] = scale * norm_ratio * (wave[gindxs] ** (-1.0 * alpha2))
+        # broken powerlaw with a smooth transition
+        axav_pow1 = scale * (wave ** (-1.0 * alpha))
+
+        norm_ratio = swave ** (-1.0 * alpha) / swave ** (-1.0 * alpha2)
+        axav_pow2 = scale * norm_ratio * (wave ** (-1.0 * alpha2))
+
+        # use smoothstep to smoothly transition between the two powerlaws
+        weights = smoothstep(
+            wave, x_min=swave - swidth / 2, x_max=swave + swidth / 2, N=1
+        )
+        axav = axav_pow1 * (1.0 - weights) + axav_pow2 * weights
+
+        # import matplotlib.pyplot as plt
+        #
+        # plt.plot(wave, weights)
+        # plt.show()
+        # exit()
 
         # silicate feature drudes
-        axav += _modified_drude(wave, ice_amp, ice_center, ice_fwhm, ice_asym)
+        # axav += _modified_drude(wave, ice_amp, ice_center, ice_fwhm, ice_asym)
         axav += _modified_drude(wave, sil1_amp, sil1_center, sil1_fwhm, sil1_asym)
         axav += _modified_drude(wave, sil2_amp, sil2_center, sil2_fwhm, sil2_asym)
 

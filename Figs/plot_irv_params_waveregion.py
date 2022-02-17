@@ -526,13 +526,16 @@ if __name__ == "__main__":
         datasets = [fit19_res, dec22_res1, dec22_res2, gor21_res]
         colors = [fit19_color, dec22_color, dec22_color, gor21_color]
         g21mod = G21mod()
+        g21mod.swave.bounds = [2.0, 8.0]
+        g21mod.swidth.bounds = [0.1, 20.0]
+        # g21mod.ice_amp = 0.0
         # g21mod.ice_amp.fixed = True
-        g21mod.swave.bounds = [3.0, 5.0]
-        g21mod.ice_fwhm.fixed = True
-        g21mod.ice_center.fixed = True
-        g21mod.ice_asym.fixed = True
-        # g21mod.sil2_asym = -0.6
-        # g21mod.sil2_asym.fixed = True
+        # g21mod.ice_fwhm.fixed = True
+        # g21mod.ice_center.fixed = True
+        # g21mod.ice_asym.fixed = True
+        g21mod.sil1_asym = -0.4
+        # g21mod.sil1_asym.fixed = True
+        g21mod.sil2_asym.fixed = True
 
         # irpow = G22pow()
         # irpow = Polynomial1D(6)
@@ -549,7 +552,7 @@ if __name__ == "__main__":
             datasets,
             colors,
             wrange=[1.0, 40.0] * u.micron,
-            no_weights=False,
+            no_weights=True,
         )
         ax[1].set_ylim(-0.015, 0.015)
         ax[3].set_ylim(-0.2, 0.4)
@@ -557,37 +560,42 @@ if __name__ == "__main__":
         # plotting the components
         modx = np.linspace(0.8, 35.0, 100) * u.micron
         tmodel = copy.deepcopy(fitted_models[0])
-        tmodel.ice_amp = 0.0
         tmodel.sil1_amp = 0.0
         tmodel.sil2_amp = 0.0
         ax[0].plot(modx, tmodel(modx), "k--")
 
         tmodel = copy.deepcopy(fitted_models[0])
-        tmodel.ice_amp = 0.0
         tmodel.sil2_amp = 0.0
         ax[0].plot(modx, tmodel(modx), "k:")
 
         tmodel = copy.deepcopy(fitted_models[0])
-        tmodel.ice_amp = 0.0
         tmodel.sil1_amp = 0.0
         ax[0].plot(modx, tmodel(modx), "k:")
-
-        tmodel = copy.deepcopy(fitted_models[0])
-        tmodel.ice_amp = 0.0
-        for k in range(3):
-            gvals = (datasets[k][1].value >= 0.8) & (datasets[k][1].value <= 35.0)
-            fitx = 1.0 / datasets[k][1][gvals].value
-            ax[1].plot(
-                datasets[k][1][gvals].value,
-                datasets[k][2][gvals] - tmodel(fitx),
-                "k:",
-            )
 
         tmodel = copy.deepcopy(fitted_models[0])
         tmodel.scale = 0.0
         tmodel.sil1_amp = 0.0
         tmodel.sil2_amp = 0.0
         ax[1].plot(modx, tmodel(modx), "k:")
+
+        # tmodel = copy.deepcopy(fitted_models[0])
+        # swave = tmodel.swave
+        # norm_ratio = swave ** (-1.0 * tmodel.alpha) / swave ** (-1.0 * tmodel.alpha2)
+        # tpow = PowerLaw1D()
+        # print(norm_ratio)
+        # tpow.amplitude = tmodel.scale * norm_ratio
+        # tpow.x_0 = 1.0
+        # tpow.alpha = tmodel.alpha2
+        # print(tpow(modx))
+        # ax[0].plot(modx, tpow(modx), "k:")
+        #
+        # tpow = PowerLaw1D()
+        # print(norm_ratio)
+        # tpow.amplitude = tmodel.scale
+        # tpow.x_0 = 1.0
+        # tpow.alpha = tmodel.alpha
+        # print(tpow(modx))
+        # ax[0].plot(modx, tpow(modx), "k:")
 
         # annotate features
         flabels = [
