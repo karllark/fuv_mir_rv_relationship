@@ -3,7 +3,7 @@ from scipy.special import comb
 
 from astropy.modeling import Fittable1DModel, Parameter
 
-from astropy.modeling.models import Drude1D, Polynomial1D, PowerLaw1D
+from astropy.modeling.models import Drude1D, Polynomial1D  # , PowerLaw1D
 
 # from dust_extinction.shapes import G21
 from dust_extinction.helpers import _get_x_in_wavenumbers, _test_valid_x_range
@@ -121,35 +121,38 @@ class G22(BaseExtRvModel):
         # NIR/MIR
         # fmt: off
         # (scale, alpha1, alpha2, swave, swidth), sil1, sil2
-        ir_a = [0.37591, 1.64271, 0.64907, 4.32372, 7.07545,
-                0.0604, 9.81385, 2.02153, -0.29642,
-                0.02868, 20.56499, 20., -0.27]
-        ir_b = [-1.07917, 1., -1.18025]
+        ir_a = [0.37964, 1.60228, 0.44087, 4.43503, 6.70447,
+                0.06022, 9.82174, 1.91943, -0.28325,
+                0.02695, 20.38638, 17., -0.27]
+        # ir_b = [-1.07917, 1., -1.18025]
+        ir_b = [-0.54372, 16.03173, -128.15723, 414.0907, -659.84316,
+                510.29657, -152.88959]
         # fmt: on
         g21mod = G21mod()
         g21mod.parameters = ir_a
         self.a[ir_indxs] = g21mod(x[ir_indxs])
 
-        irpow = PowerLaw1D()
-        irpow.parameters = ir_b
-        self.b[ir_indxs] = irpow(x[ir_indxs])
+        # irpow = PowerLaw1D()
+        irpoly = Polynomial1D(6)
+        irpoly.parameters = ir_b
+        self.b[ir_indxs] = irpoly(x[ir_indxs])
 
         # optical
         # fmt: off
         # polynomial coeffs, ISS1, ISS2, ISS3
-        opt_a = [-1.45443, 3.55138, -2.72229, 1.28108, -0.29903, 0.02714,
-                 0.03309, 2.238, 0.243,
-                 0.02605, 2.054, 0.179,
-                 0.02062, 1.587, 0.243]
-        opt_b = [4.03455, -14.9946, 16.35544, -8.19947, 2.04049, -0.19609,
-                 0.23486, 2.238, 0.243,
-                 0.11975, 2.054, 0.179,
-                 0.19201, 1.587, 0.243]
+        opt_a = [-0.8792, 1.82004, -0.74087, 0.20642, -0.02249,
+                 0.04365, 2.288, 0.243,
+                 0.03358, 2.054, 0.179,
+                 0.01563, 1.587, 0.243]
+        opt_b = [-0.62879, -1.30082, 1.08796, -0.13022, 0.00883,
+                 0.19705, 2.288, 0.243,
+                 0.18687, 2.054, 0.179,
+                 0.25191, 1.587, 0.243]
         # fmt: on
-        m20_model_a = Polynomial1D(5) + Drude1D() + Drude1D() + Drude1D()
+        m20_model_a = Polynomial1D(4) + Drude1D() + Drude1D() + Drude1D()
         m20_model_a.parameters = opt_a
         self.a[opt_indxs] = m20_model_a(x[opt_indxs])
-        m20_model_b = Polynomial1D(5) + Drude1D() + Drude1D() + Drude1D()
+        m20_model_b = Polynomial1D(4) + Drude1D() + Drude1D() + Drude1D()
         m20_model_b.parameters = opt_b
         self.b[opt_indxs] = m20_model_b(x[opt_indxs])
 
@@ -160,7 +163,7 @@ class G22(BaseExtRvModel):
         self.a[optir_overlap] = weights * m20_model_a(x[optir_overlap])
         self.a[optir_overlap] += (1.0 - weights) * g21mod(x[optir_overlap])
         self.b[optir_overlap] = weights * m20_model_b(x[optir_overlap])
-        self.b[optir_overlap] += (1.0 - weights) * irpow(x[optir_overlap])
+        self.b[optir_overlap] += (1.0 - weights) * irpoly(x[optir_overlap])
 
         # Ultraviolet
         uv_a = [0.7781, 0.28296, 1.12103, 0.12758, 4.59999, 0.99004]
@@ -352,6 +355,9 @@ class G21mod(Fittable1DModel):
         weights = smoothstep(
             wave, x_min=swave - swidth / 2, x_max=swave + swidth / 2, N=1
         )
+        # weights = (wave - (swave - swidth / 2)) / swidth
+        # weights[wave < (swave - swidth / 2)] = 0.0
+        # weights[wave > (swave + swidth / 2)] = 0.0
         axav = axav_pow1 * (1.0 - weights) + axav_pow2 * weights
 
         # import matplotlib.pyplot as plt

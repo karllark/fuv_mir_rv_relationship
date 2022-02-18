@@ -13,7 +13,7 @@ from astropy.modeling.fitting import LevMarLSQFitter, FittingWithOutlierRemoval
 from astropy.modeling.models import (
     Drude1D,
     Polynomial1D,
-    PowerLaw1D,
+    # PowerLaw1D,
 )
 from dust_extinction.shapes import FM90
 
@@ -405,9 +405,8 @@ if __name__ == "__main__":
         colors = [fit19_color, dec22_color]
         # g22opt = G22opt()
         g22opt = (
-            Polynomial1D(5)
-            # Legendre1D(3)
-            + Drude1D(amplitude=0.1, x_0=2.238, fwhm=0.243)
+            Polynomial1D(4)
+            + Drude1D(amplitude=0.1, x_0=2.288, fwhm=0.243)
             + Drude1D(amplitude=0.1, x_0=2.054, fwhm=0.179)
             + Drude1D(amplitude=0.1, x_0=1.587, fwhm=0.243)
         )
@@ -438,11 +437,11 @@ if __name__ == "__main__":
 
         # annotate features
         flabels = [
-            "ISS1\n%.4f" % (1.0 / 2.238),
-            "ISS2\n%.4f" % (1.0 / 2.054),
-            "ISS3\n%.4f" % (1.0 / 1.587),
+            "ISS1\n%.4f" % (0.4370),
+            "ISS2\n%.4f" % (0.4870),
+            "ISS3\n%.4f" % (0.6800),
         ]
-        fpos = [(1.0 / 2.238, 0.85), (1.0 / 2.054, 0.6), (1.0 / 1.587, 0.4)]
+        fpos = [(1.0 / 2.288, 0.85), (1.0 / 2.054, 0.6), (1.0 / 1.587, 0.4)]
         for clab, cpos in zip(flabels, fpos):
             ax[0].annotate(
                 clab,
@@ -488,9 +487,9 @@ if __name__ == "__main__":
             )
 
     elif args.wavereg == "ir":
-        labels = ["F19", "D22", "G21"]
-        label_colors = [fit19_color, dec22_color, gor21_color]
-        label_xpos = [0.9, 2.0, 12.0]
+        labels = ["D22", "G21"]
+        label_colors = [dec22_color, gor21_color]
+        label_xpos = [2.0, 12.0]
         label_ypos = 0.8
         for clabel, cxpos, ccolor in zip(labels, label_xpos, label_colors):
             ax[0].text(
@@ -503,9 +502,6 @@ if __name__ == "__main__":
                 fontsize=0.8 * fontsize,
             )
 
-        fit19_res = plot_irv_ssamp(
-            ax, fit19_stis, "F19", color=fit19_color, inst="STIS"
-        )
         dec22_res1 = plot_irv_ssamp(ax, dec22_spexsxd, "D22", color=dec22_color)
         dec22_res2 = plot_irv_ssamp(
             ax,
@@ -515,7 +511,7 @@ if __name__ == "__main__":
             inst="SpeXLXD",
         )
         gor21_res = plot_irv_ssamp(ax, gor21_irs, "G21", color=gor21_color)
-        xrange = [0.8, 35.0]
+        xrange = [1.0, 35.0]
         yrange_a_type = "log"
         yrange_a = [0.01, 1.3]
         yrange_b = [-1.5, 0.5]
@@ -523,11 +519,12 @@ if __name__ == "__main__":
         xticks = [1.0, 1.5, 2.0, 3.0, 4.0, 5.0, 7.0, 10.0, 15.0, 20.0, 30.0]
 
         # fitting
-        datasets = [fit19_res, dec22_res1, dec22_res2, gor21_res]
-        colors = [fit19_color, dec22_color, dec22_color, gor21_color]
+        datasets = [dec22_res1, dec22_res2, gor21_res]
+        colors = [dec22_color, dec22_color, gor21_color]
         g21mod = G21mod()
         g21mod.swave.bounds = [2.0, 8.0]
-        g21mod.swidth.bounds = [0.1, 20.0]
+        g21mod.swidth = 5.0
+        g21mod.swidth.bounds = [1.0, 20.0]
         # g21mod.ice_amp = 0.0
         # g21mod.ice_amp.fixed = True
         # g21mod.ice_fwhm.fixed = True
@@ -536,15 +533,17 @@ if __name__ == "__main__":
         g21mod.sil1_asym = -0.4
         # g21mod.sil1_asym.fixed = True
         g21mod.sil2_asym.fixed = True
+        g21mod.sil2_fwhm = 17.0
+        g21mod.sil2_fwhm.fixed = True
 
         # irpow = G22pow()
-        # irpow = Polynomial1D(6)
-        # irpow.x_range = [1.0 / 40.0, 1.0 / 0.8]
-        irpow = PowerLaw1D()
-        irpow.x_range = [1.0 / 40.0, 1.0 / 0.95]
-        irpow.scale = -1.0
-        irpow.x_0 = 1.0
-        irpow.x_0.fixed = True
+        irpow = Polynomial1D(6)
+        irpow.x_range = [1.0 / 40.0, 1.0 / 0.8]
+        # irpow = PowerLaw1D()
+        # irpow.x_range = [1.0 / 40.0, 1.0 / 0.95]
+        # irpow.scale = -1.0
+        # irpow.x_0 = 1.0
+        # irpow.x_0.fixed = True
 
         fitted_models = plot_wavereg(
             ax,
@@ -555,7 +554,7 @@ if __name__ == "__main__":
             no_weights=True,
         )
         ax[1].set_ylim(-0.015, 0.015)
-        ax[3].set_ylim(-0.2, 0.4)
+        ax[3].set_ylim(-0.2, 0.2)
 
         # plotting the components
         modx = np.linspace(0.8, 35.0, 100) * u.micron
@@ -599,11 +598,10 @@ if __name__ == "__main__":
 
         # annotate features
         flabels = [
-            "Ice \n " + r"3 $\mu$m",
             "Silicate\n " + r"10 $\mu$m",
             "Silicate\n " + r"20 $\mu$m",
         ]
-        fpos = [(3.0, 0.1), (10.0, 0.15), (20.0, 0.12)]
+        fpos = [(10.0, 0.15), (20.0, 0.12)]
         for clab, cpos in zip(flabels, fpos):
             ax[0].annotate(
                 clab,
