@@ -186,7 +186,7 @@ class G22(BaseExtRvModel):
         self.b[uvopt_overlap] += (1.0 - weights) * m20_model_b(x[uvopt_overlap])
 
         # return A(x)/A(V)
-        return self.a + self.b / Rv
+        return self.a + self.b * (1 / Rv - 1 / 3.1)
 
 
 class G21mod(Fittable1DModel):

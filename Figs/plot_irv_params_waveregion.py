@@ -14,6 +14,7 @@ from astropy.modeling.models import (
     Drude1D,
     Polynomial1D,
     # PowerLaw1D,
+    Legendre1D,
 )
 from dust_extinction.shapes import FM90
 
@@ -538,6 +539,7 @@ if __name__ == "__main__":
 
         # irpow = G22pow()
         irpow = Polynomial1D(6)
+        # irpow = Legendre1D(6)
         irpow.x_range = [1.0 / 40.0, 1.0 / 0.8]
         # irpow = PowerLaw1D()
         # irpow.x_range = [1.0 / 40.0, 1.0 / 0.95]
