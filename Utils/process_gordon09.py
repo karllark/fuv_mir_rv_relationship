@@ -30,6 +30,17 @@ if __name__ == "__main__":
         av, av_unc = ext.columns["AV"]
         # ebv, ebv_unc = ext.columns["EBV"]
         # rv, rv_unc = ext.columns["RV"]
+        # print(rv, rv_unc)
+        #
+        # if "AV" in ext.columns.keys():
+        #     ext.calc_RV()
+        #
+        # rv, rv_unc = ext.columns["RV"]
+        # print(av, av_unc)
+        # print(ebv, ebv_unc)
+        # print(rv, rv_unc)
+        # exit()
+
         for src in ext.waves.keys():
             gvals = ext.npts[src] > 0
             ext.exts[src][gvals] = (ext.exts[src][gvals] - 1.0) * av

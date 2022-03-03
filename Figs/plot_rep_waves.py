@@ -6,8 +6,8 @@ from matplotlib import cm, colors
 import numpy as np
 
 import astropy.units as u
-
 from astropy.modeling import models, fitting
+from astropy.table import Table
 
 from hyperfit.linfit import LinFit as HFLinFit
 
@@ -50,6 +50,10 @@ if __name__ == "__main__":
     parser.add_argument("--png", help="save figure as a png file", action="store_true")
     parser.add_argument("--pdf", help="save figure as a pdf file", action="store_true")
     args = parser.parse_args()
+
+    # test angles given correlation coefficients
+    # print(45.0 - np.rad2deg(np.arccos(np.array([-1.0, -0.5, 0.0, 0.5, 1.0]))) / 2.0)
+    # exit()
 
     # read in all the extinction curves
     # files_val04 = glob.glob("data/val04*.fits")
@@ -175,7 +179,10 @@ if __name__ == "__main__":
     plt.rc("ytick.major", width=2)
 
     fig, fax = plt.subplots(
-        nrows=3, ncols=3, figsize=(12, 12), sharex=True,  # constrained_layout=True
+        nrows=3,
+        ncols=3,
+        figsize=(12, 12),
+        sharex=True,  # constrained_layout=True
     )
     ax = fax.flatten()
 
@@ -335,6 +342,20 @@ if __name__ == "__main__":
             )
         ax[i].legend(title=f"{repwaves[rname]}", ncol=2)
 
+        # save the data
+        a = Table()
+        gvals = np.isfinite(yvals)
+        a["irv"] = xvals[gvals]
+        a["irv_unc"] = xvals_unc[gvals]
+        a["alav"] = yvals[gvals]
+        a["alav_unc"] = yvals_unc[gvals]
+        a.write(
+            f"results/fuv_mir_data_{rname}_{repwaves[rname].value}.dat",
+            format="ascii.commented_header",
+        )
+
+        # xvals = None
+
         # fit a line
         if xvals is not None:
             fit = fitting.LinearLSQFitter()
@@ -352,21 +373,19 @@ if __name__ == "__main__":
                 # fit a line with hyperfit to account for correlated uncertainties
                 ndata = np.sum(gvals)
                 hfdata, hfcov = np.zeros((2, ndata)), np.zeros((2, 2, ndata))
-                corr_xy = -1.0 * avfrac
+                corr_xy = xvals * yvals * (avfrac ** 2)
+                # print(avfrac[gvals])
+                # print((corr_xy / (xvals_unc * yvals_unc))[gvals])
 
                 hfdata[0, :] = xvals[gvals]
                 hfdata[1, :] = yvals[gvals]
                 for k in range(ndata):
                     hfcov[0, 0, k] = xvals_unc[gvals][k] ** 2
                     hfcov[0, 1, k] = (
-                        xvals_unc[gvals][k]
-                        * yvals_unc[gvals][k]
-                        * (corr_xy[gvals][k] ** 2)
+                        xvals_unc[gvals][k] * yvals_unc[gvals][k] * corr_xy[gvals][k]
                     )
                     hfcov[1, 0, k] = (
-                        xvals_unc[gvals][k]
-                        * yvals_unc[gvals][k]
-                        * (corr_xy[gvals][k] ** 2)
+                        xvals_unc[gvals][k] * yvals_unc[gvals][k] * corr_xy[gvals][k]
                     )
                     hfcov[1, 1, k] = yvals_unc[gvals][k] ** 2
 
@@ -410,7 +429,7 @@ if __name__ == "__main__":
                         alpha=0.20,
                         color=cm.viridis(sigmas[k] / 3.0)[0],
                         # edgecolor="k",
-                        angle=90.0 - np.rad2deg(np.arccos(corr_xy[k])),
+                        angle=45.0 - np.rad2deg(np.arccos(corr_xy[gvals][k]) / 2),
                         # angle=np.rad2deg(corr_xy[k] * 45.0 * np.pi / 180.0),
                     )
                     # print(yvals[gvals][k], yvals_unc[gvals][k], np.rad2deg(corr_xy[k] * 45.0 * np.pi / 180.0))
