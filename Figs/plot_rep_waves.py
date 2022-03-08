@@ -1,9 +1,13 @@
 import glob
 import argparse
 import matplotlib.pyplot as plt
-from matplotlib.patches import Ellipse
+
+# from matplotlib.patches import Ellipse
 from matplotlib import cm, colors
 import numpy as np
+from math import sqrt, cos, sin
+from matplotlib.patches import Polygon
+from scipy.linalg import eigh
 
 import astropy.units as u
 from astropy.modeling import models, fitting
@@ -17,7 +21,7 @@ from measure_extinction.extdata import ExtData
 from fit_irv import get_irvs, get_alav
 
 
-def plot_exts(exts, rvs, avs, ctype, cwave, psym, label, alpha=0.75):
+def plot_exts(exts, rvs, avs, ctype, cwave, psym, label, alpha=0.5):
     oexts = get_alav(exts, ctype, cwave)
     xvals = rvs[:, 0]
     xvals_unc = rvs[:, 1]
@@ -32,22 +36,75 @@ def plot_exts(exts, rvs, avs, ctype, cwave, psym, label, alpha=0.75):
         label=label,
         alpha=alpha,
     )
-    ax[i].errorbar(
-        rvs[:, 0],
-        oexts[:, 0],
-        xerr=xvals_unc,
-        yerr=yvals_unc,
-        fmt=psym,
-        fillstyle="none",
-        alpha=0.2,
-    )
+    # ax[i].errorbar(
+    #     rvs[:, 0],
+    #     oexts[:, 0],
+    #     xerr=xvals_unc,
+    #     yerr=yvals_unc,
+    #     fmt=psym,
+    #     fillstyle="none",
+    #     alpha=0.2,
+    # )
     return (xvals, xvals_unc, yvals, yvals_unc, avfrac)
+
+
+# from Dries' dust_fuse_h2 repository
+def cov_ellipse(x, y, cov, num_sigma=1, **kwargs):
+    """
+    Create an ellipse at the coordinates (x,y), that represents the
+    covariance. The style of the ellipse can be adjusted using the
+    kwargs.
+
+    Returns
+    -------
+    ellipse: matplotlib.patches.Ellipse
+    """
+
+    position = [x, y]
+
+    if cov[0, 1] != 0:
+        # length^2 and orientation of ellipse axes is determined by
+        # eigenvalues and vectors, respectively. Eigh is more stable for
+        # symmetric / hermitian matrices.
+        values, vectors = eigh(cov)
+        width, height = np.sqrt(np.abs(values)) * num_sigma * 2
+    else:
+        width = sqrt(cov[0, 0]) * 2
+        height = sqrt(cov[1, 1]) * 2
+        vectors = np.array([[1, 0], [0, 1]])
+
+    # I ended up using a Polygon just like Karl's plotting code. The
+    # ellipse is buggy when the difference in axes is extreme (1e22). I
+    # think it is because even a slight rotation will make the ellipse
+    # look extremely strechted, as the extremely long axis (~1e22)
+    # rotates into the short coordinate (~1).
+
+    # two vectors representing the axes of the ellipse
+    vw = vectors[:, 0] * width / 2
+    vh = vectors[:, 1] * height / 2
+
+    # generate corners
+    num_corners = 64
+    angles = np.linspace(0, 2 * np.pi, num_corners, endpoint=False)
+    corners = np.row_stack([position + vw * cos(a) + vh * sin(a) for a in angles])
+
+    return Polygon(corners, **kwargs)
+
+
+def draw_ellipses(ax, xs, ys, covs, num_sigma=1, sigmas=None, **kwargs):
+    for k, (x, y, cov) in enumerate(zip(xs, ys, covs)):
+        # if sigmas is not None:
+        #     color = cm.viridis(sigmas[k] / 3.0)[0]
+        # ax.add_patch(cov_ellipse(x, y, cov, num_sigma, color=color, **kwargs))
+        ax.add_patch(cov_ellipse(x, y, cov, num_sigma, **kwargs))
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--rv", help="plot versus R(V)", action="store_true")
-    parser.add_argument("--incval04", help="include Valencic et al. 2004", action="store_true")
+    parser.add_argument(
+        "--incval04", help="include Valencic et al. 2004", action="store_true"
+    )
     # parser.add_argument("--elvebv", help="plot versus E(l-V)/E(B-V)", action="store_true")
     parser.add_argument("--png", help="save figure as a png file", action="store_true")
     parser.add_argument("--pdf", help="save figure as a pdf file", action="store_true")
@@ -121,12 +178,6 @@ if __name__ == "__main__":
         rvs_fit19[i, 0] = irv[0]
         rvs_fit19[i, 1] = irv[1]
         iext.trans_elv_alav()
-
-        # plt.plot(iext.waves["STIS"], iext.exts["STIS"])
-        # plt.plot(iext.waves["STIS"], iext.npts["STIS"])
-        # plt.show()
-        # print(iext.exts["STIS"])
-        # exit()
 
     # get R(V) values
     n_gor21 = len(files_gor21)
@@ -323,7 +374,7 @@ if __name__ == "__main__":
                     repwaves[rname],
                     psym_val04,
                     "V04",
-                    alpha=0.25,
+                    alpha=0.0,
                 )
                 xvals = np.concatenate((xvals, xvals5))
                 xvals_unc = np.concatenate((xvals_unc, xvals5_unc))
@@ -370,7 +421,7 @@ if __name__ == "__main__":
 
         # xvals = None
 
-        nohfit = True
+        do_hfit = True
 
         # fit a line
         if xvals is not None:
@@ -382,50 +433,51 @@ if __name__ == "__main__":
             )
             mod_xvals = np.array(xrange)
 
-            or_fit = fitting.FittingWithOutlierRemoval(fit, sigma_clip, niter=3, sigma=3.0)
-            fitted_line, mask = or_fit(line_init, xvals[gvals], yvals[gvals], weights=1.0 / yvals_unc[gvals])
-            mask = np.logical_not(mask)
-            bad_data = np.ma.masked_array(yvals[gvals], mask=mask)
+            or_fit = fitting.FittingWithOutlierRemoval(
+                fit, sigma_clip, niter=3, sigma=3.0
+            )
+            fitted_line, mask = or_fit(
+                line_init, xvals[gvals], yvals[gvals], weights=1.0 / yvals_unc[gvals]
+            )
+            not_mask = np.logical_not(mask)
+            bad_data = np.ma.masked_array(yvals[gvals], mask=not_mask)
             ax[i].plot(xvals[gvals], bad_data, "rx")
 
-            ax[i].plot(mod_xvals, fitted_line(mod_xvals), "k--", label="Fit", alpha=0.75, lw=3)
+            ax[i].plot(
+                mod_xvals, fitted_line(mod_xvals), "k--", label="Fit", alpha=0.75, lw=3
+            )
 
-            if nohfit:
-                ndata = np.sum(gvals)
-                cov_xy = (xvals[gvals] + 1 / 3.1) * yvals[gvals] * (avfrac[gvals] ** 2)
-                corr_xy = cov_xy / (xvals_unc[gvals] * yvals_unc[gvals])
-                corr_xy[corr_xy > 1] = 1
-                # print(avfrac[gvals])
-                # print(corr_xy)
-                # print(np.rad2deg(np.arccos(corr_xy)))
-                # Generate ellipses
-                for k in range(ndata):
-                    e = Ellipse(
-                        xy=[xvals[gvals][k], yvals[gvals][k]],
-                        width=2 * xvals_unc[gvals][k],
-                        height=2 * yvals_unc[gvals][k],
-                        # angle=0.0,
-                        alpha=0.20,
-                        color="k",
-                        # edgecolor="k",
-                        angle=45.0 - np.rad2deg(np.arccos(corr_xy[k]) / 2),
-                        # angle=np.rad2deg(corr_xy[k] * 45.0 * np.pi / 180.0),
-                    )
-                    # print(yvals[gvals][k], yvals_unc[gvals][k], np.rad2deg(corr_xy[k] * 45.0 * np.pi / 180.0))
-                    # ax[i].add_artist(e)
-            else:
+            ndata = np.sum(gvals)
+            # linear approximation - can result in > 1 correlation coefficients
+            cov_xy = (xvals[gvals] + 1 / 3.1) * yvals[gvals] * (avfrac[gvals] ** 2)
+            corr_xy = cov_xy / (xvals_unc[gvals] * yvals_unc[gvals])
+            corr_xy[corr_xy > 0.99] = 0.99
+
+            covs = np.zeros((ndata, 2, 2))
+            for k in range(ndata):
+                covs[k, 0, 0] = xvals_unc[gvals][k] ** 2
+                covs[k, 0, 1] = corr_xy[k] * xvals_unc[gvals][k] * yvals_unc[gvals][k]
+                covs[k, 1, 0] = corr_xy[k] * xvals_unc[gvals][k] * yvals_unc[gvals][k]
+                covs[k, 1, 1] = yvals_unc[gvals][k] ** 2
+
+            draw_ellipses(ax[i], xvals[gvals], yvals[gvals], covs, color="black", alpha=0.1)
+
+            if do_hfit:
+                # only fit the non-rejected points
+                xvals_good = xvals[gvals][not_mask]
+                xvals_unc_good = xvals_unc[gvals][not_mask]
+                yvals_good = yvals[gvals][not_mask]
+                yvals_unc_good = yvals_unc[gvals][not_mask]
+                covs_good = covs[not_mask, :, :]
+                ndata = len(xvals_good)
+
                 # fit a line with hyperfit to account for correlated uncertainties
-                ndata = np.sum(gvals)
                 hfdata, hfcov = np.zeros((2, ndata)), np.zeros((2, 2, ndata))
-                cov_xy = (xvals + 1 / 3.1) * yvals * (avfrac ** 2)
 
-                hfdata[0, :] = xvals[gvals]
-                hfdata[1, :] = yvals[gvals]
+                hfdata[0, :] = xvals_good
+                hfdata[1, :] = yvals_good
                 for k in range(ndata):
-                    hfcov[0, 0, k] = xvals_unc[gvals][k] ** 2
-                    hfcov[0, 1, k] = corr_xy[gvals][k]
-                    hfcov[1, 0, k] = corr_xy[gvals][k]
-                    hfcov[1, 1, k] = yvals_unc[gvals][k] ** 2
+                    hfcov[:, :, k] = covs_good[k, :, :]
 
                 hf_fit = HFLinFit(hfdata, hfcov)
 
@@ -457,21 +509,9 @@ if __name__ == "__main__":
 
                 sigmas = hf_fit.get_sigmas()
 
-                # Generate ellipses
-                for k in range(ndata):
-                    e = Ellipse(
-                        xy=[hfdata[0][k], hfdata[1][k]],
-                        width=2 * xvals_unc[gvals][k],
-                        height=2 * yvals_unc[gvals][k],
-                        # angle=0.0,
-                        alpha=0.20,
-                        color=cm.viridis(sigmas[k] / 3.0)[0],
-                        # edgecolor="k",
-                        angle=45.0 - np.rad2deg(np.arccos(corr_xy[gvals][k]) / 2),
-                        # angle=np.rad2deg(corr_xy[k] * 45.0 * np.pi / 180.0),
-                    )
-                    # print(yvals[gvals][k], yvals_unc[gvals][k], np.rad2deg(corr_xy[k] * 45.0 * np.pi / 180.0))
-                    ax[i].add_artist(e)
+                # draw_ellipses(
+                #     ax[i], xvals_good, yvals_good, covs_good, sigmas=sigmas, alpha=0.15
+                # )
 
     fax[0, 1].set_xlim(xrange)
 

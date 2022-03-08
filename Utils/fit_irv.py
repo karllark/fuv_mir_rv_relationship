@@ -105,7 +105,7 @@ def fit_allwaves(exts, src, ofilename, hfemcee=False):
         oexts = get_alav(exts, src, rwave)
         if np.sum(np.isfinite(oexts[:, 0])) > 5:
             # print(rwave)
-            # regular unweighted fit
+            # regular weighted fit
             npts[k] = np.sum(np.isfinite(oexts[:, 0]))
             yvals = oexts[:, 0]
             yvals_unc = oexts[:, 1]
@@ -124,7 +124,9 @@ def fit_allwaves(exts, src, ofilename, hfemcee=False):
             # hyperfit using x and y uncs and covariance between them
             ndata = np.sum(gvals)
             hfdata, hfcov = np.zeros((2, ndata)), np.zeros((2, 2, ndata))
-            corr_xy = -1.0 * avfrac
+            cov_xy = (xvals[gvals] + 1 / 3.1) * yvals[gvals] * (avfrac[gvals] ** 2)
+            corr_xy = cov_xy / (xvals_unc[gvals] * yvals_unc[gvals])
+            corr_xy[corr_xy > 0.99] = 0.99
 
             hfdata[0, :] = xvals[gvals]
             hfdata[1, :] = yvals[gvals]
@@ -133,12 +135,12 @@ def fit_allwaves(exts, src, ofilename, hfemcee=False):
                 hfcov[0, 1, ll] = (
                     xvals_unc[gvals][ll]
                     * yvals_unc[gvals][ll]
-                    * (corr_xy[gvals][ll] ** 2)
+                    * (corr_xy[ll] ** 2)
                 )
                 hfcov[1, 0, ll] = (
                     xvals_unc[gvals][ll]
                     * yvals_unc[gvals][ll]
-                    * (corr_xy[gvals][ll] ** 2)
+                    * (corr_xy[ll] ** 2)
                 )
                 hfcov[1, 1, ll] = yvals_unc[gvals][ll] ** 2
 
