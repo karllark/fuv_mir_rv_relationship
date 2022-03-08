@@ -33,6 +33,9 @@ Linear fits (using hyperfit) of 1/R(V) versus A(lambda)/A(V): python Utils/fit_i
 Results of different fitting functions/methods: python Figs/plot_diff_fits.py datafile
    datafile from plot_rep_waves.py
 
+Plot R(V) relationships (including the one derived in this paper) with measured
+extinction curves for a narrow range of R(V) values: python Figs/plot_rep_curves.py
+
 Figures
 -------
 

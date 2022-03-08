@@ -1,8 +1,8 @@
 import numpy as np
 from scipy.special import comb
+import astropy.units as u
 
 from astropy.modeling import Fittable1DModel, Parameter
-
 from astropy.modeling.models import Drude1D, Polynomial1D  # , PowerLaw1D
 
 # from dust_extinction.shapes import G21
@@ -130,7 +130,7 @@ class G22(BaseExtRvModel):
         # fmt: on
         g21mod = G21mod()
         g21mod.parameters = ir_a
-        self.a[ir_indxs] = g21mod(x[ir_indxs])
+        self.a[ir_indxs] = g21mod(x[ir_indxs] / u.micron)
 
         # irpow = PowerLaw1D()
         irpoly = Polynomial1D(6)
@@ -161,7 +161,7 @@ class G22(BaseExtRvModel):
             1.0 / optir_waves[1] - 1.0 / optir_waves[0]
         )
         self.a[optir_overlap] = weights * m20_model_a(x[optir_overlap])
-        self.a[optir_overlap] += (1.0 - weights) * g21mod(x[optir_overlap])
+        self.a[optir_overlap] += (1.0 - weights) * g21mod(x[optir_overlap] / u.micron)
         self.b[optir_overlap] = weights * m20_model_b(x[optir_overlap])
         self.b[optir_overlap] += (1.0 - weights) * irpoly(x[optir_overlap])
 
@@ -171,18 +171,18 @@ class G22(BaseExtRvModel):
 
         fm90_model_a = FM90()
         fm90_model_a.parameters = uv_a
-        self.a[uv_indxs] = fm90_model_a(x[uv_indxs])
+        self.a[uv_indxs] = fm90_model_a(x[uv_indxs] / u.micron)
         fm90_model_b = FM90()
         fm90_model_b.parameters = uv_b
-        self.b[uv_indxs] = fm90_model_b(x[uv_indxs])
+        self.b[uv_indxs] = fm90_model_b(x[uv_indxs] / u.micron)
 
         # overlap between uv/optical
         weights = (1.0 / uvopt_waves[1] - x[uvopt_overlap]) / (
             1.0 / uvopt_waves[1] - 1.0 / uvopt_waves[0]
         )
-        self.a[uvopt_overlap] = weights * fm90_model_a(x[uvopt_overlap])
+        self.a[uvopt_overlap] = weights * fm90_model_a(x[uvopt_overlap] / u.micron)
         self.a[uvopt_overlap] += (1.0 - weights) * m20_model_a(x[uvopt_overlap])
-        self.b[uvopt_overlap] = weights * fm90_model_b(x[uvopt_overlap])
+        self.b[uvopt_overlap] = weights * fm90_model_b(x[uvopt_overlap] / u.micron)
         self.b[uvopt_overlap] += (1.0 - weights) * m20_model_b(x[uvopt_overlap])
 
         # return A(x)/A(V)
