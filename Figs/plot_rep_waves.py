@@ -19,6 +19,7 @@ from hyperfit.linfit import LinFit as HFLinFit
 from measure_extinction.extdata import ExtData
 
 from fit_irv import get_irvs, get_alav
+from helpers import mcfit_cov
 
 
 def plot_exts(exts, rvs, avs, ctype, cwave, psym, label, alpha=0.5):
@@ -421,7 +422,8 @@ if __name__ == "__main__":
 
         # xvals = None
 
-        do_hfit = True
+        do_hfit = False
+        do_mcfit = True
 
         # fit a line
         if xvals is not None:
@@ -437,7 +439,9 @@ if __name__ == "__main__":
                 fit, sigma_clip, niter=3, sigma=3.0
             )
             fitted_line, mask = or_fit(
-                line_init, xvals[gvals], yvals[gvals], weights=1.0 / yvals_unc[gvals]
+                line_init,
+                xvals[gvals],
+                yvals[gvals],  # , weights=1.0 / yvals_unc[gvals]
             )
             not_mask = np.logical_not(mask)
             bad_data = np.ma.masked_array(yvals[gvals], mask=not_mask)
@@ -449,6 +453,7 @@ if __name__ == "__main__":
 
             ndata = np.sum(gvals)
             # linear approximation - can result in > 1 correlation coefficients
+            # xvals_unc[gvals] /= 4.0
             cov_xy = (xvals[gvals] + 1 / 3.1) * yvals[gvals] * (avfrac[gvals] ** 2)
             corr_xy = cov_xy / (xvals_unc[gvals] * yvals_unc[gvals])
             corr_xy[corr_xy > 0.99] = 0.99
@@ -460,7 +465,21 @@ if __name__ == "__main__":
                 covs[k, 1, 0] = corr_xy[k] * xvals_unc[gvals][k] * yvals_unc[gvals][k]
                 covs[k, 1, 1] = yvals_unc[gvals][k] ** 2
 
-            draw_ellipses(ax[i], xvals[gvals], yvals[gvals], covs, color="black", alpha=0.1)
+            draw_ellipses(
+                ax[i], xvals[gvals], yvals[gvals], covs, color="black", alpha=0.1
+            )
+
+            if do_mcfit:
+
+                nummc = 1000
+                mcparams = mcfit_cov(xvals[gvals], yvals[gvals], covs, not_mask, num=nummc, ax=ax[i])
+
+                for k in range(nummc):
+                    fitted_line.intercept = mcparams[k, 0]
+                    fitted_line.slope = mcparams[k, 1]
+                    ax[i].plot(
+                        mod_xvals, fitted_line(mod_xvals), "b-", alpha=0.01, lw=3
+                    )
 
             if do_hfit:
                 # only fit the non-rejected points

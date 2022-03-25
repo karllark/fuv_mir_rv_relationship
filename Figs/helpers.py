@@ -1,9 +1,14 @@
 import numpy as np
 from scipy.special import comb
+from numpy.random import default_rng
 import astropy.units as u
 
 from astropy.modeling import Fittable1DModel, Parameter
 from astropy.modeling.models import Drude1D, Polynomial1D  # , PowerLaw1D
+
+from astropy.stats import sigma_clip
+from astropy.modeling.models import Linear1D
+from astropy.modeling.fitting import LinearLSQFitter, FittingWithOutlierRemoval
 
 # from dust_extinction.shapes import G21
 from dust_extinction.helpers import _get_x_in_wavenumbers, _test_valid_x_range
@@ -528,3 +533,56 @@ class G22pow(Fittable1DModel):
             axav[gindxs] = scale * norm_ratio * (wave[gindxs] ** (-1.0 * alpha2))
 
         return axav
+
+
+def mcfit_cov(x, y, covs, mask, num=10, ax=None):
+    """
+    Do a number of linear fits using Monte Carlo to resample the data based on
+    the covariance matrices.
+
+
+    Returns
+    -------
+    fitparams : 2d ndarray
+        2 x num array with intercept and slope fit parameters for num fits
+    """
+    fit = LinearLSQFitter()
+    line_init = Linear1D()
+    or_fit = FittingWithOutlierRemoval(fit, sigma_clip, niter=3, sigma=3.0)
+
+    rng = default_rng()
+
+    # generate a new set of x,y values based on the covariances
+    npts = np.sum(mask)
+    newxs = np.zeros((npts, num))
+    newys = np.zeros((npts, num))
+    k2 = 0
+    for k, (x1, y1, cov1) in enumerate(zip(x, y, covs)):
+        if mask[k]:
+            newxy = rng.multivariate_normal([x1, y1], cov1, size=num)
+            newxs[k2, :] = newxy[:, 0]
+            newys[k2, :] = newxy[:, 1]
+            k2 += 1
+
+    # x = np.average(newxs, axis=1)
+    # y = np.average(newys, axis=1)
+    # fitted_line, mask = or_fit(line_init, x, y)
+    # if ax is not None:
+    #     ax.plot(x, fitted_line(x), "g:", alpha=0.75, lw=4)
+
+    # print(y - np.average(newys, axis=1))
+    # exit()
+
+    fitparam = np.zeros((num, 2))
+    # newx = np.zeros((npts))
+    for k in range(num):
+        # fitted_line = fit(line_init, newxs[:, k], newys[:, k])
+        #fitted_line = fit(line_init, x, y)
+        fitted_line, mask = or_fit(line_init, newxs[:, k], newys[:, k])
+        fitparam[k, 0] = fitted_line.intercept.value
+        fitparam[k, 1] = fitted_line.slope.value
+
+        #if ax is not None:
+        #    ax.plot(newxs[:, k], newys[:, k], "rx", alpha=0.15)
+
+    return fitparam
