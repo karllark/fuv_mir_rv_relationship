@@ -150,11 +150,11 @@ def fit_allwaves(exts, src, ofilename, hfemcee=False):
             corr_xy[corr_xy > 0.99] = 0.99
 
             covs = np.zeros((ndata, 2, 2))
-            for k in range(ndata):
-                covs[k, 0, 0] = xvals_unc[gvals][k] ** 2
-                covs[k, 0, 1] = corr_xy[k] * xvals_unc[gvals][k] * yvals_unc[gvals][k]
-                covs[k, 1, 0] = corr_xy[k] * xvals_unc[gvals][k] * yvals_unc[gvals][k]
-                covs[k, 1, 1] = yvals_unc[gvals][k] ** 2
+            for kk in range(ndata):
+                covs[kk, 0, 0] = xvals_unc[gvals][kk] ** 2
+                covs[kk, 0, 1] = corr_xy[kk] * xvals_unc[gvals][kk] * yvals_unc[gvals][kk]
+                covs[kk, 1, 0] = corr_xy[kk] * xvals_unc[gvals][kk] * yvals_unc[gvals][kk]
+                covs[kk, 1, 1] = yvals_unc[gvals][kk] ** 2
 
             # do MC fits
             nummc = 1000
@@ -163,6 +163,7 @@ def fit_allwaves(exts, src, ofilename, hfemcee=False):
             mcslopes_unc[k] = np.std(mcparams[:, 1])
             mcintercepts[k] = np.mean(mcparams[:, 0])
             mcintercepts_unc[k] = np.std(mcparams[:, 0])
+            # print(k, mcslopes[k], mcintercepts[k])
 
             # hyperfit using x and y uncs and covariance between them
             ndata = np.sum(gvals)
@@ -278,7 +279,7 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
-    hfemcee = True
+    hfemcee = False
 
     if args.dataset == "G09":
         exts_gor09 = get_exts("gor09")

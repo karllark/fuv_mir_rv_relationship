@@ -116,10 +116,10 @@ def plot_irv_ssamp(
     return (
         itab["npts"],
         itab["waves"],
-        itab["hfintercepts"],
-        itab["hfslopes"],
-        itab["hfintercepts_std"],
-        itab["hfslopes_std"],
+        itab["mcintercepts"],
+        itab["mcslopes"],
+        itab["mcintercepts_std"],
+        itab["mcslopes_std"],
     )
 
 
@@ -252,14 +252,20 @@ if __name__ == "__main__":
 
     # get irv parameters
     gor09_fuse = QTable.read("results/gor09_fuse_irv_params.fits")
-    gor09_iue = QTable.read("results/gor09_iue_irv_params.fits")
+    # gor09_iue = QTable.read("results/gor09_iue_irv_params.fits")
+    gvals = gor09_fuse["mcslopes_std"] > 0
+    print(gor09_fuse["mcslopes"][gvals])
+    exit()
 
     fit19_stis = QTable.read("results/fit19_stis_irv_params.fits")
 
-    gor21_iue = QTable.read("results/gor21_iue_irv_params.fits")
+    # gor21_iue = QTable.read("results/gor21_iue_irv_params.fits")
     gor21_irs = QTable.read("results/gor21_irs_irv_params.fits")
+    gvals = gor21_irs["mcslopes_std"] > 0
+    print(gor21_irs["mcslopes"][gvals])
+    exit()
 
-    dec22_iue = QTable.read("results/dec22_iue_irv_params.fits")
+    # dec22_iue = QTable.read("results/dec22_iue_irv_params.fits")
     dec22_spexsxd = QTable.read("results/dec22_spexsxd_irv_params.fits")
     dec22_spexlxd = QTable.read("results/dec22_spexlxd_irv_params.fits")
 
