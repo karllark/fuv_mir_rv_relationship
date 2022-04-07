@@ -92,9 +92,11 @@ if __name__ == "__main__":
         ax.set_xlim(0.3, 1.0)
         ax.set_ylim(0.2, 3.0)
 
+    ax.set_title(f"R(V) = {args.rv} +/- {args.drv}")
+
     fig.tight_layout()
 
-    fname = r"fuv_mir_rep_curves_rv{args.rv}_drv{args.drv}"
+    fname = f"fuv_mir_rep_curves_rv{args.rv}_drv{args.drv}_{args.wavereg}"
     if args.png:
         fig.savefig(f"{fname}.png")
     elif args.pdf:
