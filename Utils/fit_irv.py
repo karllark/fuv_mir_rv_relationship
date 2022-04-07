@@ -5,9 +5,12 @@ from tqdm import tqdm
 import numpy as np
 from astropy.modeling import models, fitting
 from astropy.table import QTable
+from astropy.stats import sigma_clip
 from hyperfit.linfit import LinFit as HFLinFit
 
 from measure_extinction.extdata import ExtData
+
+from helpers import mcfit_cov
 
 
 def get_alav(exts, src, wave):
@@ -93,6 +96,12 @@ def fit_allwaves(exts, src, ofilename, hfemcee=False):
     intercepts = np.zeros((nwaves))
     npts = np.zeros(nwaves)
     rmss = np.zeros(nwaves)
+
+    mcslopes = np.zeros((nwaves))
+    mcslopes_unc = np.zeros((nwaves))
+    mcintercepts = np.zeros((nwaves))
+    mcintercepts_unc = np.zeros((nwaves))
+
     hfslopes = np.zeros((nwaves))
     hfintercepts = np.zeros((nwaves))
     hfsigmas = np.zeros(nwaves)
@@ -110,9 +119,20 @@ def fit_allwaves(exts, src, ofilename, hfemcee=False):
             yvals = oexts[:, 0]
             yvals_unc = oexts[:, 1]
             gvals = np.isfinite(yvals)
-            fitted_line = fit(
-                line_init, xvals[gvals], yvals[gvals], weights=1.0 / yvals_unc[gvals]
+            # fitted_line = fit(
+            #    line_init, xvals[gvals], yvals[gvals], weights=1.0 / yvals_unc[gvals]
+            # )
+
+            or_fit = fitting.FittingWithOutlierRemoval(
+                fit, sigma_clip, niter=3, sigma=3.0
             )
+            fitted_line, mask = or_fit(
+                line_init,
+                xvals[gvals],
+                yvals[gvals],  # , weights=1.0 / yvals_unc[gvals]
+            )
+            not_mask = np.logical_not(mask)
+
             # print(fitted_line)
             slopes[k] = fitted_line.slope.value
             intercepts[k] = fitted_line.intercept.value
@@ -120,6 +140,29 @@ def fit_allwaves(exts, src, ofilename, hfemcee=False):
                 np.sum(np.square(yvals[gvals] - fitted_line(xvals[gvals])))
                 / (npts[k] - 1)
             )
+
+            # define needed covariance information
+            ndata = np.sum(gvals)
+            # linear approximation - can result in > 1 correlation coefficients
+            # xvals_unc[gvals] /= 4.0
+            cov_xy = (xvals[gvals] + 1 / 3.1) * yvals[gvals] * (avfrac[gvals] ** 2)
+            corr_xy = cov_xy / (xvals_unc[gvals] * yvals_unc[gvals])
+            corr_xy[corr_xy > 0.99] = 0.99
+
+            covs = np.zeros((ndata, 2, 2))
+            for k in range(ndata):
+                covs[k, 0, 0] = xvals_unc[gvals][k] ** 2
+                covs[k, 0, 1] = corr_xy[k] * xvals_unc[gvals][k] * yvals_unc[gvals][k]
+                covs[k, 1, 0] = corr_xy[k] * xvals_unc[gvals][k] * yvals_unc[gvals][k]
+                covs[k, 1, 1] = yvals_unc[gvals][k] ** 2
+
+            # do MC fits
+            nummc = 1000
+            mcparams = mcfit_cov(xvals[gvals], yvals[gvals], covs, not_mask, num=nummc)
+            mcslopes[k] = np.mean(mcparams[:, 1])
+            mcslopes_unc[k] = np.std(mcparams[:, 1])
+            mcintercepts[k] = np.mean(mcparams[:, 0])
+            mcintercepts_unc[k] = np.std(mcparams[:, 0])
 
             # hyperfit using x and y uncs and covariance between them
             ndata = np.sum(gvals)
@@ -192,6 +235,12 @@ def fit_allwaves(exts, src, ofilename, hfemcee=False):
     otab["intercepts"] = intercepts
     otab["rmss"] = rmss
     otab["npts"] = npts
+
+    otab["mcslopes"] = mcslopes
+    otab["mcintercepts"] = mcintercepts
+    otab["mcslopes_std"] = mcslopes_unc
+    otab["mcintercepts_std"] = mcintercepts_unc
+
     otab["hfslopes"] = hfslopes
     otab["hfintercepts"] = hfintercepts
     otab["hfsigmas"] = hfsigmas
@@ -229,26 +278,28 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
+    hfemcee = False
+
     if args.dataset == "G09":
         exts_gor09 = get_exts("gor09")
-        fit_allwaves(exts_gor09, "FUSE", "gor09_fuse_irv_params.fits", hfemcee=True)
-        # fit_allwaves(exts_gor09, "IUE", "gor09_iue_irv_params.fits", hfemcee=True)
+        fit_allwaves(exts_gor09, "FUSE", "gor09_fuse_irv_params.fits", hfemcee=hfemcee)
+        # fit_allwaves(exts_gor09, "IUE", "gor09_iue_irv_params.fits", hfemcee=hfemcee)
     elif args.dataset == "F19":
         exts_fit19 = get_exts("fit19")
-        fit_allwaves(exts_fit19, "STIS", "fit19_stis_irv_params.fits", hfemcee=True)
+        fit_allwaves(exts_fit19, "STIS", "fit19_stis_irv_params.fits", hfemcee=hfemcee)
     elif args.dataset == "G21":
         exts_gor21 = get_exts("gor21")
-        # fit_allwaves(exts_gor21, "IUE", "gor21_iue_irv_params.fits", hfemcee=True)
-        fit_allwaves(exts_gor21, "IRS", "gor21_irs_irv_params.fits", hfemcee=True)
+        # fit_allwaves(exts_gor21, "IUE", "gor21_iue_irv_params.fits", hfemcee=hfemcee)
+        fit_allwaves(exts_gor21, "IRS", "gor21_irs_irv_params.fits", hfemcee=hfemcee)
     elif args.dataset == "D22":
         exts_dec22 = get_exts("dec22")
-        # fit_allwaves(exts_dec22, "IUE", "dec22_iue_irv_params.fits", hfemcee=True)
-        fit_allwaves(exts_dec22, "SpeX_SXD", "dec22_spexsxd_irv_params.fits", hfemcee=True)
-        fit_allwaves(exts_dec22, "SpeX_LXD", "dec22_spexlxd_irv_params.fits", hfemcee=True)
+        # fit_allwaves(exts_dec22, "IUE", "dec22_iue_irv_params.fits", hfemcee=hfemcee)
+        fit_allwaves(exts_dec22, "SpeX_SXD", "dec22_spexsxd_irv_params.fits", hfemcee=hfemcee)
+        fit_allwaves(exts_dec22, "SpeX_LXD", "dec22_spexlxd_irv_params.fits", hfemcee=hfemcee)
     elif args.dataset == "AIUE":
         exts_gor09 = get_exts("gor09")
         exts_fit19 = get_exts("fit19")
         exts_gor21 = get_exts("gor21")
         exts_dec22 = get_exts("dec22")
         all_exts = exts_gor09 + exts_fit19 + exts_gor21 + exts_dec22
-        fit_allwaves(all_exts, "IUE", "aiue_iue_irv_params.fits", hfemcee=True)
+        fit_allwaves(all_exts, "IUE", "aiue_iue_irv_params.fits", hfemcee=hfemcee)
