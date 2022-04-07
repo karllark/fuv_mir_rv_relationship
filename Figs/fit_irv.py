@@ -278,7 +278,7 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
-    hfemcee = False
+    hfemcee = True
 
     if args.dataset == "G09":
         exts_gor09 = get_exts("gor09")

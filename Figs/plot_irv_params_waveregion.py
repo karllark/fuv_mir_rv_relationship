@@ -75,6 +75,24 @@ def plot_irv_ssamp(
                 color=color,
                 alpha=0.75,
             )
+    if "mcslopes" in itab.colnames:
+        for k, cname in enumerate(["mcintercepts", "mcslopes"]):
+            ax[k * 2].plot(
+                itab["waves"][gvals],
+                itab[cname][gvals],
+                linestyle="dotted",
+                color=color,
+                label=label,
+                lw=4,
+                alpha=0.75,
+            )
+            ax[k * 2].fill_between(
+                itab["waves"][gvals].value,
+                itab[cname][gvals] - itab[f"{cname}_std"],
+                itab[cname][gvals] + itab[f"{cname}_std"],
+                color=color,
+                alpha=0.25,
+            )
     if "hfslopes" in itab.colnames:
         for k, cname in enumerate(["hfintercepts", "hfslopes", "hfsigmas"]):
             ax[k * 2].plot(
