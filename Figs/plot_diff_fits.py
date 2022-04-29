@@ -5,6 +5,7 @@ from astropy.table import Table
 from astropy.stats import sigma_clip
 from astropy.modeling import models, fitting
 from astropy.modeling import Fittable1DModel, Parameter
+from astropy.modeling.models import Polynomial1D
 
 
 class BrokenLine(Fittable1DModel):
@@ -76,6 +77,8 @@ if __name__ == "__main__":
     fitted_line, mask = or_fit(line_init, x, y, weights=1.0 / yunc)
     filtered_data = np.ma.masked_array(y, mask=mask)
 
+    print(fitted_line)
+
     tax.errorbar(x, y, yerr=yunc, fmt="ko", fillstyle="none", label="Clipped Data")
     tax.plot(x, filtered_data, "ko", label="Fitted Data")
     tax.plot(x, fitted_line(x), "k-", label="Linear Fit", lw=4.0, alpha=0.5)
@@ -104,28 +107,36 @@ if __name__ == "__main__":
         breakval=-0.08,
     )
     line_init.breakval.fixed = True
+
+    line_init = Polynomial1D(2)
+    # line_init.c1 = 0.0
+    # line_init.c1.fixed = True
+
+    fitx = x + 1 / 3.1
+    fitx = x
+
     fit = fitting.LevMarLSQFitter()
     or_fit = fitting.FittingWithOutlierRemoval(fit, sigma_clip, niter=3, sigma=3.0)
-    fitted_line, mask = or_fit(line_init, x, y, weights=1.0 / yunc)
+    fitted_line, mask = or_fit(line_init, fitx, y, weights=1.0 / yunc)
     filtered_data = np.ma.masked_array(y, mask=mask)
 
     print(fitted_line)
 
     tax.errorbar(x, y, yerr=yunc, fmt="ko", fillstyle="none", label="Clipped Data")
     tax.plot(x, filtered_data, "ko", label="Fitted Data")
-    tax.plot(x, fitted_line(x), "k-", label="BrokenLine Fit", lw=4.0, alpha=0.5)
+    tax.plot(x, fitted_line(fitx), "k-", label="a + b / R(V)^2 Fit", lw=4.0, alpha=0.5)
     tax.legend()
 
     tax = ax[1, 2]
     tax.errorbar(
         x,
-        y - fitted_line(x),
+        y - fitted_line(fitx),
         yerr=yunc,
         fmt="ko",
         fillstyle="none",
         label="Clipped Data",
     )
-    tax.plot(x, filtered_data - fitted_line(x), "ko", label="Fitted Data")
+    tax.plot(x, filtered_data - fitted_line(fitx), "ko", label="Fitted Data")
     tax.axhline(0.0, linestyle="dashed", alpha=0.5, color="black", lw=4.0)
     tax.set_xlabel("1/R(V) - 1/3.1")
     tax.legend()
