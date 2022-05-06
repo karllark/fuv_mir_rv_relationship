@@ -1,11 +1,8 @@
 import numpy as np
 from scipy.stats import multivariate_normal
 
-from astropy.modeling.models import Linear1D
-
-import numpy as np
 import matplotlib.pyplot as plt
-from astropy.modeling import models, fitting
+from astropy.modeling import models
 import scipy.optimize as op
 
 
@@ -33,64 +30,7 @@ def lnlike_correlated(params, measured_vals, updated_model, cov, intinfo, x):
     x : ndarray
         Independent variable "x" on which to evaluate the model.
     """
-    updated_model.slope = params[0]
-    updated_model.intercept = params[1]
-
-    modx = np.arange(intinfo[0], intinfo[1], intinfo[2])
-    mody = updated_model(modx)
-    pos = np.column_stack((modx, mody))
-    # determine the linear distance between adjacent model points
-    #    needed for line integral
-    lindist = np.sqrt(np.square(modx[1:] - modx[:-1]) + np.square(mody[1:] - mody[:-1]))
-    # total distance - needed for normalizing line integral
-    totlength = np.sqrt((modx[-1] - modx[0]) ** 2 + (mody[-1] - mody[0]) ** 2)
-    lineintegral = 0.0
-    for k, xval in enumerate(x):
-        # define a multivariate normal/Gaussian for each data point
-        datamod = multivariate_normal([xval, measured_vals[k]], cov[k, :, :])
-        # evalute the data at the model (x,y) points
-        modvals = datamod.pdf(pos)
-        modaves = modvals[1:] + modvals[:-1]
-        tintegral = np.sum(modaves * lindist)
-        # print(k, tintegral)
-        if tintegral != 0.0:
-            lineintegral += np.log(tintegral / totlength)
-        # print(xval, measured_vals[k], lineintegral, np.sum(modaves * lindist) / totlength)
-    if lineintegral == 0.0 or not np.isfinite(lineintegral):
-        lineintegral = -1e20
-
-    print(params, lineintegral, totlength)
-
-    return lineintegral
-
-
-def lnlike_correlated_quad(params, measured_vals, updated_model, cov, intinfo, x):
-    """
-    Compute the natural log of the likelihood that a model fits
-    (x, y) data points that have correlated uncertainties given
-    in the covariance matrix.  This is done by computing the line
-    integral along the model evaluating the likelihood each x,y data
-    point matches the model thereby getting the total likelihood
-    that the data is from that model.  Should be the full solution unlike
-    fitting assuming only y uncs or fitting with the orthogonal distance
-    regression (ODR).
-
-    Parameters
-    ----------
-    measured_vals : ndarray of length N
-        Measured data values.
-    updated_model : `~astropy.modeling.Model`
-        Model with parameters set by the current iteration of the optimizer.
-    cov : ndarray (N, 2, 2)
-        2x2 covariance matrices for each (x, y) data points
-    intinfo : 3 element array
-        line integration info with (x min, x max, x delta) values
-    x : ndarray
-        Independent variable "x" on which to evaluate the model.
-    """
-    updated_model.c0 = params[0]
-    updated_model.c1 = params[1]
-    updated_model.c2 = params[2]
+    updated_model.parameters = params
 
     modx = np.arange(intinfo[0], intinfo[1], intinfo[2])
     mody = updated_model(modx)

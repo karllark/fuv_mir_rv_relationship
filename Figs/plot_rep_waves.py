@@ -21,7 +21,7 @@ from measure_extinction.extdata import ExtData
 from fit_irv import get_irvs, get_alav
 from helpers import mcfit_cov, mcfit_cov_quad
 
-from fit_full2dcor import lnlike_correlated_quad
+from fit_full2dcor import lnlike_correlated
 import scipy.optimize as op
 
 
@@ -504,7 +504,7 @@ if __name__ == "__main__":
 
             # fit with new full 2D fitting
             def nll(*args):
-                return -lnlike_correlated_quad(*args)
+                return -lnlike_correlated(*args)
 
             params = fitted_quad.parameters
             print("start", params)
