@@ -5,9 +5,9 @@ import numpy as np
 import astropy.units as u
 
 from measure_extinction.extdata import ExtData
-from dust_extinction.parameter_averages import CCM89, F19
+from dust_extinction.parameter_averages import CCM89, F19, GCC09
 
-from helpers import G22
+from helpers import G22, G22MC, G22HF
 
 
 if __name__ == "__main__":
@@ -71,13 +71,19 @@ if __name__ == "__main__":
     rvs = [args.rv - args.drv, args.rv, args.rv + args.drv]
     for rv in rvs:
         g22mod = G22(Rv=rv)
-        ax.plot(modx, g22mod(modx), label=f"R(V) = {rv:.1f}", color="black")
+        ax.plot(modx, g22mod(modx), color="black", lw=4, alpha=0.5)
+
+        g22mcmod = G22MC(Rv=rv)
+        ax.plot(modx, g22mcmod(modx), color="green", alpha=0.5, linestyle="dotted", lw=2)
+
+        g22hfmod = G22HF(Rv=rv)
+        ax.plot(modx, g22hfmod(modx), color="blue", alpha=0.5, linestyle="dashed", lw=2)
 
         ccm89mod = CCM89(Rv=rv)
-        ax.plot(modx2, ccm89mod(modx2), linestyle="dashed", color="black")
+        ax.plot(modx2, ccm89mod(modx2), linestyle="dashed", color="black", alpha=0.25)
 
         f19mod = F19(Rv=rv)
-        ax.plot(modx2, f19mod(modx2), linestyle="dotted", color="black")
+        ax.plot(modx2, f19mod(modx2), linestyle="dotted", color="black", alpha=0.25)
 
     ax.set_xscale("log")
     ax.set_yscale("log")

@@ -13,8 +13,8 @@ from astropy.modeling.fitting import LevMarLSQFitter, FittingWithOutlierRemoval
 from astropy.modeling.models import (
     Drude1D,
     Polynomial1D,
-    # PowerLaw1D,
-    Legendre1D,
+    PowerLaw1D,
+    # Legendre1D,
 )
 from dust_extinction.shapes import FM90
 
@@ -22,7 +22,7 @@ from helpers import G21mod, G22  # , G22pow  # , G22opt
 
 
 def plot_irv_ssamp(
-    ax, itab, label, color="k", linestyle="solid", simpfit=False, inst=None
+    ax, itab, label, color="k", linestyle="solid", simpfit=True, inst=None
 ):
 
     # remove bad regions
@@ -61,6 +61,10 @@ def plot_irv_ssamp(
 
     # set to NAN so they are not plotted
     bvals = itab["npts"] == 0
+    itab["slopes"][bvals] = np.NAN
+    itab["intercepts"][bvals] = np.NAN
+    itab["mcslopes"][bvals] = np.NAN
+    itab["mcintercepts"][bvals] = np.NAN
     itab["hfslopes"][bvals] = np.NAN
     itab["hfintercepts"][bvals] = np.NAN
     itab["hfsigmas"][bvals] = np.NAN
@@ -72,7 +76,7 @@ def plot_irv_ssamp(
                 itab["waves"][gvals],
                 itab[cname][gvals],
                 linestyle="dashed",
-                color=color,
+                color="red",
                 alpha=0.75,
             )
     if "mcslopes" in itab.colnames:
@@ -83,7 +87,6 @@ def plot_irv_ssamp(
                 linestyle="dotted",
                 color=color,
                 label=label,
-                lw=4,
                 alpha=0.75,
             )
             ax[k * 2].fill_between(
@@ -99,7 +102,7 @@ def plot_irv_ssamp(
                 itab["waves"][gvals],
                 itab[cname][gvals],
                 linestyle=linestyle,
-                color=color,
+                color="black",
                 label=label,
                 alpha=0.75,
             )
@@ -109,15 +112,17 @@ def plot_irv_ssamp(
                     itab["waves"][gvals].value,
                     itab[cname][gvals] - itab[f"{cname}_std"],
                     itab[cname][gvals] + itab[f"{cname}_std"],
-                    color=color,
+                    color="black",
                     alpha=0.25,
                 )
 
     return (
         itab["npts"],
         itab["waves"],
-        itab["mcintercepts"],
-        itab["mcslopes"],
+        itab["intercepts"],
+        itab["slopes"],
+        # itab["mcintercepts"],
+        # itab["mcslopes"],
         itab["mcintercepts_std"],
         itab["mcslopes_std"],
     )
@@ -253,17 +258,11 @@ if __name__ == "__main__":
     # get irv parameters
     gor09_fuse = QTable.read("results/gor09_fuse_irv_params.fits")
     # gor09_iue = QTable.read("results/gor09_iue_irv_params.fits")
-    gvals = gor09_fuse["mcslopes_std"] > 0
-    print(gor09_fuse["mcslopes"][gvals])
-    exit()
 
     fit19_stis = QTable.read("results/fit19_stis_irv_params.fits")
 
     # gor21_iue = QTable.read("results/gor21_iue_irv_params.fits")
     gor21_irs = QTable.read("results/gor21_irs_irv_params.fits")
-    gvals = gor21_irs["mcslopes_std"] > 0
-    print(gor21_irs["mcslopes"][gvals])
-    exit()
 
     # dec22_iue = QTable.read("results/dec22_iue_irv_params.fits")
     dec22_spexsxd = QTable.read("results/dec22_spexsxd_irv_params.fits")
@@ -562,14 +561,14 @@ if __name__ == "__main__":
         g21mod.sil2_fwhm.fixed = True
 
         # irpow = G22pow()
-        irpow = Polynomial1D(6)
+        # irpow = Polynomial1D(6)
         # irpow = Legendre1D(6)
-        irpow.x_range = [1.0 / 40.0, 1.0 / 0.8]
-        # irpow = PowerLaw1D()
-        # irpow.x_range = [1.0 / 40.0, 1.0 / 0.95]
-        # irpow.scale = -1.0
-        # irpow.x_0 = 1.0
-        # irpow.x_0.fixed = True
+        # irpow.x_range = [1.0 / 40.0, 1.0 / 0.8]
+        irpow = PowerLaw1D()
+        irpow.x_range = [1.0 / 40.0, 1.0 / 0.95]
+        irpow.scale = -1.0
+        irpow.x_0 = 1.0
+        irpow.x_0.fixed = True
 
         fitted_models = plot_wavereg(
             ax,
