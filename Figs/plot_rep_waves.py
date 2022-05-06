@@ -21,6 +21,9 @@ from measure_extinction.extdata import ExtData
 from fit_irv import get_irvs, get_alav
 from helpers import mcfit_cov, mcfit_cov_quad
 
+from fit_full2dcor import lnlike_correlated_quad
+import scipy.optimize as op
+
 
 def plot_exts(exts, rvs, avs, ctype, cwave, psym, label, alpha=0.5):
     oexts = get_alav(exts, ctype, cwave)
@@ -423,7 +426,7 @@ if __name__ == "__main__":
         # xvals = None
 
         do_hfit = False
-        do_mcfit = True
+        do_mcfit = False
 
         # fit a line
         if xvals is not None:
@@ -481,7 +484,7 @@ if __name__ == "__main__":
             # linear approximation - can result in > 1 correlation coefficients
             cov_xy = (xvals[gvals] + 1 / 3.1) * yvals[gvals] * (avfrac[gvals] ** 2)
             corr_xy = cov_xy / (xvals_unc[gvals] * yvals_unc[gvals])
-            corr_xy[corr_xy > 0.99] = 0.99
+            corr_xy[corr_xy > 0.9] = 0.9
 
             covs = np.zeros((ndata, 2, 2))
             for k in range(ndata):
@@ -498,6 +501,24 @@ if __name__ == "__main__":
             draw_ellipses(
                 ax[i], xvals[gvals], yvals[gvals], covs, color="black", alpha=0.1
             )
+
+            # fit with new full 2D fitting
+            def nll(*args):
+                return -lnlike_correlated_quad(*args)
+
+            params = fitted_quad.parameters
+            print("start", params)
+            intinfo = [-0.20, 0.20, 0.0001]
+            result = op.minimize(
+                nll,
+                params,
+                args=(yvals[gvals], fitted_quad, covs, intinfo, xvals[gvals]),
+            )
+            nparams = result["x"]
+            print(nparams)
+
+            fitted_quad.parameters = nparams
+            ax[i].plot(mod_xvals, fitted_quad(mod_xvals), "p-", alpha=0.5, lw=3)
 
             if do_mcfit:
 
