@@ -79,7 +79,9 @@ if __name__ == "__main__":
 
     print(fitted_line)
 
-    tax.errorbar(x, y, yerr=yunc, fmt="ko", fillstyle="none", label="Clipped Data")
+    tax.errorbar(
+        x, y, xerr=xunc, yerr=yunc, fmt="ko", fillstyle="none", label="Clipped Data"
+    )
     tax.plot(x, filtered_data, "ko", label="Fitted Data")
     tax.plot(x, fitted_line(x), "k-", label="Linear Fit", lw=4.0, alpha=0.5)
     tax.legend()
@@ -100,22 +102,22 @@ if __name__ == "__main__":
 
     # fitting brokenline with outlier removal
     tax = ax[0, 2]
-    line_init = BrokenLine(
-        intercept=fitted_line.intercept,
-        slope1=fitted_line.slope * 0.5,
-        slope2=fitted_line.slope * 2.0,
-        breakval=-0.08,
-    )
-    line_init.breakval.fixed = True
+    # line_init = BrokenLine(
+    #     intercept=fitted_line.intercept,
+    #     slope1=fitted_line.slope * 0.5,
+    #     slope2=fitted_line.slope * 2.0,
+    #     breakval=-0.08,
+    # )
+    # line_init.breakval.fixed = True
 
     line_init = Polynomial1D(2)
     # line_init.c1 = 0.0
     # line_init.c1.fixed = True
 
-    fitx = x + 1 / 3.1
     fitx = x
 
-    fit = fitting.LevMarLSQFitter()
+    # fit = fitting.LevMarLSQFitter()
+    fit = fitting.LinearLSQFitter()
     or_fit = fitting.FittingWithOutlierRemoval(fit, sigma_clip, niter=3, sigma=3.0)
     fitted_line, mask = or_fit(line_init, fitx, y, weights=1.0 / yunc)
     filtered_data = np.ma.masked_array(y, mask=mask)
@@ -124,7 +126,7 @@ if __name__ == "__main__":
 
     tax.errorbar(x, y, yerr=yunc, fmt="ko", fillstyle="none", label="Clipped Data")
     tax.plot(x, filtered_data, "ko", label="Fitted Data")
-    tax.plot(x, fitted_line(fitx), "k-", label="a + b / R(V)^2 Fit", lw=4.0, alpha=0.5)
+    tax.plot(x, fitted_line(fitx), "k-", label="a + bx + cx^2 Fit", lw=4.0, alpha=0.5)
     tax.legend()
 
     tax = ax[1, 2]

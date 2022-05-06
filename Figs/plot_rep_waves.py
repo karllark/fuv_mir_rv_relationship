@@ -19,7 +19,7 @@ from hyperfit.linfit import LinFit as HFLinFit
 from measure_extinction.extdata import ExtData
 
 from fit_irv import get_irvs, get_alav
-from helpers import mcfit_cov
+from helpers import mcfit_cov, mcfit_cov_quad
 
 
 def plot_exts(exts, rvs, avs, ctype, cwave, psym, label, alpha=0.5):
@@ -430,10 +430,16 @@ if __name__ == "__main__":
             fit = fitting.LinearLSQFitter()
             line_init = models.Linear1D()
             gvals = np.isfinite(yvals)
+            # print(np.sum(gvals))
+            # gvals[xvals_unc > 0.05] = False
+            # print(np.sum(gvals))
+            # print("max 1/rv unc used", max(xvals_unc[gvals]))
             fitted_line = fit(
-                line_init, xvals[gvals], yvals[gvals], weights=1.0 / yvals_unc[gvals]
+                line_init,
+                xvals[gvals],
+                yvals[gvals],  # , weights=1.0 / yvals_unc[gvals]
             )
-            mod_xvals = np.array(xrange)
+            mod_xvals = np.arange(xrange[0], xrange[1], 0.01)
 
             or_fit = fitting.FittingWithOutlierRemoval(
                 fit, sigma_clip, niter=3, sigma=3.0
@@ -451,19 +457,43 @@ if __name__ == "__main__":
                 mod_xvals, fitted_line(mod_xvals), "k--", label="Fit", alpha=0.75, lw=3
             )
 
+            # quadratic fit
+            quad_init = models.Polynomial1D(2)
+            fitted_quad, mask = or_fit(
+                quad_init,
+                xvals[gvals],
+                yvals[gvals],  # , weights=1.0 / yvals_unc[gvals]
+            )
+            ax[i].plot(
+                mod_xvals,
+                fitted_quad(mod_xvals),
+                "k:",
+                label="Quad Fit",
+                alpha=0.75,
+                lw=3,
+            )
+
             ndata = np.sum(gvals)
+            # avfrac = np.full(len(xvals), 0.0)
+            # xvals_unc = xvals_unc / 2.0
+            # yvals_unc = yvals_unc / 2.0
+
             # linear approximation - can result in > 1 correlation coefficients
-            # xvals_unc[gvals] /= 4.0
             cov_xy = (xvals[gvals] + 1 / 3.1) * yvals[gvals] * (avfrac[gvals] ** 2)
             corr_xy = cov_xy / (xvals_unc[gvals] * yvals_unc[gvals])
             corr_xy[corr_xy > 0.99] = 0.99
 
             covs = np.zeros((ndata, 2, 2))
             for k in range(ndata):
-                covs[k, 0, 0] = xvals_unc[gvals][k] ** 2
-                covs[k, 0, 1] = corr_xy[k] * xvals_unc[gvals][k] * yvals_unc[gvals][k]
-                covs[k, 1, 0] = corr_xy[k] * xvals_unc[gvals][k] * yvals_unc[gvals][k]
-                covs[k, 1, 1] = yvals_unc[gvals][k] ** 2
+                kk = k
+                covs[k, 0, 0] = xvals_unc[gvals][kk] ** 2
+                covs[k, 0, 1] = (
+                    corr_xy[kk] * xvals_unc[gvals][kk] * yvals_unc[gvals][kk]
+                )
+                covs[k, 1, 0] = (
+                    corr_xy[kk] * xvals_unc[gvals][kk] * yvals_unc[gvals][kk]
+                )
+                covs[k, 1, 1] = yvals_unc[gvals][kk] ** 2
 
             draw_ellipses(
                 ax[i], xvals[gvals], yvals[gvals], covs, color="black", alpha=0.1
@@ -471,15 +501,32 @@ if __name__ == "__main__":
 
             if do_mcfit:
 
-                nummc = 1000
-                mcparams = mcfit_cov(xvals[gvals], yvals[gvals], covs, not_mask, num=nummc, ax=ax[i])
+                nummc = 20
+                mcparams = mcfit_cov(
+                    xvals[gvals], yvals[gvals], covs, not_mask, num=nummc, ax=ax[i]
+                )
 
                 for k in range(nummc):
                     fitted_line.intercept = mcparams[k, 0]
                     fitted_line.slope = mcparams[k, 1]
-                    ax[i].plot(
-                        mod_xvals, fitted_line(mod_xvals), "b-", alpha=0.01, lw=3
-                    )
+                    ax[i].plot(mod_xvals, fitted_line(mod_xvals), "b-", alpha=0.5, lw=3)
+
+                mcparams = mcfit_cov_quad(
+                    xvals[gvals],
+                    yvals[gvals],
+                    covs,
+                    not_mask,
+                    num=nummc,
+                    ax=ax[i],
+                    # quad_init=quad_init,
+                )
+
+                fitted_quad = models.Polynomial1D(2)
+                for k in range(nummc):
+                    fitted_quad.c0 = mcparams[k, 0]
+                    fitted_quad.c1 = mcparams[k, 1]
+                    fitted_quad.c2 = mcparams[k, 2]
+                    ax[i].plot(mod_xvals, fitted_quad(mod_xvals), "g-", alpha=0.5, lw=3)
 
             if do_hfit:
                 # only fit the non-rejected points

@@ -18,16 +18,17 @@ def plot_props(ax, avs, rvs, psym, label):
     print(label, len(avs[:, 0]))
     print("AV", np.min(avs[:, 0]), np.max(avs[:, 0]))
     print("RV", np.min(rvs[:, 0]), np.max(rvs[:, 0]))
-    # ax.errorbar(
-    #     avs[:, 0],
-    #     rvs[:, 0],
-    #     xerr=avs[:, 1],
-    #     yerr=rvs[:, 1],
-    #     fmt=psym,
-    #     fillstyle="none",
-    #     label=label,
-    #     alpha=0.75,
-    # )
+    yerr = (1 / rvs[:, 0]) * (rvs[:, 1] / rvs[:, 0])
+    ax.errorbar(
+        1 / rvs[:, 0] - 1 / 3.1,
+        avs[:, 0],
+        xerr=avs[:, 1],
+        yerr=yerr,
+        fmt=psym,
+        fillstyle="none",
+        label=label,
+        alpha=0.2,
+    )
 
 
 def check_overlap(samp1, samp2):

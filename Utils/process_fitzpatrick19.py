@@ -70,8 +70,8 @@ if __name__ == "__main__":
         if "AV" in ext.columns.keys():
             ext.calc_RV()
 
-            # rv, rv_unc = ext.columns["RV"]
-            # print(rv, rv_unc)
+            rv, rv_unc = ext.columns["RV"]
+            print(rv, rv_unc)
             # exit()
 
             ext.type = "elx"
