@@ -3,7 +3,7 @@ import argparse
 import matplotlib.pyplot as plt
 
 # from matplotlib.patches import Ellipse
-from matplotlib import cm, colors
+# from matplotlib import cm, colors
 import numpy as np
 from math import sqrt, cos, sin
 from matplotlib.patches import Polygon
@@ -12,7 +12,7 @@ from scipy.linalg import eigh
 import astropy.units as u
 from astropy.modeling import models, fitting
 from astropy.table import Table
-from astropy.stats import sigma_clip
+# from astropy.stats import sigma_clip
 
 from hyperfit.linfit import LinFit as HFLinFit
 
@@ -21,8 +21,7 @@ from measure_extinction.extdata import ExtData
 from fit_irv import get_irvs, get_alav
 from helpers import mcfit_cov, mcfit_cov_quad
 
-from fit_full2dcor import lnlike_correlated
-import scipy.optimize as op
+from fit_full2dcor import fit_2Dcorrelated
 
 
 def plot_exts(exts, rvs, avs, ctype, cwave, psym, label, alpha=0.5):
@@ -430,61 +429,48 @@ if __name__ == "__main__":
 
         # fit a line
         if xvals is not None:
+
+            gvals = np.isfinite(yvals)
+
+            # linear fit
             fit = fitting.LinearLSQFitter()
             line_init = models.Linear1D()
-            gvals = np.isfinite(yvals)
-            # print(np.sum(gvals))
-            # gvals[xvals_unc > 0.05] = False
-            # print(np.sum(gvals))
-            # print("max 1/rv unc used", max(xvals_unc[gvals]))
-            fitted_line = fit(
-                line_init,
-                xvals[gvals],
-                yvals[gvals],  # , weights=1.0 / yvals_unc[gvals]
-            )
+            fitted_line = fit(line_init, xvals[gvals], yvals[gvals])
             mod_xvals = np.arange(xrange[0], xrange[1], 0.01)
 
-            or_fit = fitting.FittingWithOutlierRemoval(
-                fit, sigma_clip, niter=3, sigma=3.0
-            )
-            fitted_line, mask = or_fit(
-                line_init,
-                xvals[gvals],
-                yvals[gvals],  # , weights=1.0 / yvals_unc[gvals]
-            )
-            not_mask = np.logical_not(mask)
-            bad_data = np.ma.masked_array(yvals[gvals], mask=not_mask)
-            ax[i].plot(xvals[gvals], bad_data, "rx")
+            # or_fit = fitting.FittingWithOutlierRemoval(
+            #     fit, sigma_clip, niter=3, sigma=3.0
+            # )
+            # fitted_line, mask = or_fit(line_init, xvals[gvals], yvals[gvals])
+            # not_mask = np.logical_not(mask)
+            # bad_data = np.ma.masked_array(yvals[gvals], mask=not_mask)
+            # ax[i].plot(xvals[gvals], bad_data, "rx")
 
             ax[i].plot(
-                mod_xvals, fitted_line(mod_xvals), "k--", label="Fit", alpha=0.75, lw=3
+                mod_xvals, fitted_line(mod_xvals), "k--", label="Fit", alpha=0.5, lw=3
             )
 
             # quadratic fit
             quad_init = models.Polynomial1D(2)
-            fitted_quad, mask = or_fit(
-                quad_init,
-                xvals[gvals],
-                yvals[gvals],  # , weights=1.0 / yvals_unc[gvals]
-            )
+            fitted_quad = fit(quad_init, xvals[gvals], yvals[gvals])
+            # fitted_quad, mask = or_fit(quad_init, xvals[gvals], yvals[gvals])
             ax[i].plot(
                 mod_xvals,
                 fitted_quad(mod_xvals),
                 "k:",
                 label="Quad Fit",
-                alpha=0.75,
+                alpha=0.5,
                 lw=3,
             )
 
+            # setup the covariance matrices and plot the points
             ndata = np.sum(gvals)
-            # avfrac = np.full(len(xvals), 0.0)
-            # xvals_unc = xvals_unc / 2.0
-            # yvals_unc = yvals_unc / 2.0
-
             # linear approximation - can result in > 1 correlation coefficients
             cov_xy = (xvals[gvals] + 1 / 3.1) * yvals[gvals] * (avfrac[gvals] ** 2)
             corr_xy = cov_xy / (xvals_unc[gvals] * yvals_unc[gvals])
-            corr_xy[corr_xy > 0.9] = 0.9
+            # put a max on the correlation coefficient
+            max_corr = 0.90
+            corr_xy[corr_xy > max_corr] = max_corr
 
             covs = np.zeros((ndata, 2, 2))
             for k in range(ndata):
@@ -503,23 +489,18 @@ if __name__ == "__main__":
             )
 
             # fit with new full 2D fitting
-            def nll(*args):
-                return -lnlike_correlated(*args)
-
-            params = fitted_quad.parameters
-            print("start", params)
             intinfo = [-0.20, 0.20, 0.0001]
-            result = op.minimize(
-                nll,
-                params,
-                args=(yvals[gvals], fitted_quad, covs, intinfo, xvals[gvals]),
+            fit2d_quad = fit_2Dcorrelated(
+                xvals[gvals], yvals[gvals], covs, fitted_line, intinfo
             )
-            nparams = result["x"]
-            print(nparams)
+            ax[i].plot(mod_xvals, fitted_line(mod_xvals), "m--", alpha=0.75, lw=3)
 
-            fitted_quad.parameters = nparams
-            ax[i].plot(mod_xvals, fitted_quad(mod_xvals), "p-", alpha=0.5, lw=3)
+            fit2d_quad = fit_2Dcorrelated(
+                xvals[gvals], yvals[gvals], covs, fitted_quad, intinfo
+            )
+            ax[i].plot(mod_xvals, fitted_quad(mod_xvals), "m:", alpha=0.75, lw=3)
 
+            # do Monte Carlo fitting if asked
             if do_mcfit:
 
                 nummc = 20
@@ -622,15 +603,15 @@ if __name__ == "__main__":
         fax[i, 0].set_ylabel(laby)
 
     # Add the colourbar
-    cb = fig.colorbar(
-        cm.ScalarMappable(norm=colors.Normalize(vmin=0.0, vmax=3.0), cmap=cm.viridis),
-        ax=fax,
-        shrink=0.12,
-        alpha=0.5,
-        aspect=10,
-        anchor=(-4.7, 0.85),
-    )
-    cb.set_label(label=r"$\sigma$ offset", fontsize=14)
+    # cb = fig.colorbar(
+    #     cm.ScalarMappable(norm=colors.Normalize(vmin=0.0, vmax=3.0), cmap=cm.viridis),
+    #     ax=fax,
+    #     shrink=0.12,
+    #     alpha=0.5,
+    #     aspect=10,
+    #     anchor=(-4.7, 0.85),
+    # )
+    # cb.set_label(label=r"$\sigma$ offset", fontsize=14)
 
     fig.tight_layout()
 

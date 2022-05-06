@@ -48,16 +48,29 @@ def lnlike_correlated(params, measured_vals, updated_model, cov, intinfo, x):
         modvals = datamod.pdf(pos)
         modaves = modvals[1:] + modvals[:-1]
         tintegral = np.sum(modaves * lindist)
-        # print(k, tintegral)
         if tintegral != 0.0:
             lineintegral += np.log(tintegral / totlength)
-        # print(xval, measured_vals[k], lineintegral, np.sum(modaves * lindist) / totlength)
     if lineintegral == 0.0 or not np.isfinite(lineintegral):
         lineintegral = -1e20
 
-    print(params, lineintegral, totlength)
-
     return lineintegral
+
+
+def fit_2Dcorrelated(x, y, covs, fit_model, intinfo):
+    """
+    Do standard optimization fitting with correlated lnlike function.
+    """
+
+    def nll(*args):
+        return -lnlike_correlated(*args)
+
+    params = fit_model.parameters
+    print("start:", params)
+    result = op.minimize(nll, params, args=(y, fit_model, covs, intinfo, x))
+
+    fit_model.parameters = result["x"]
+    print("end:", fit_model.parameters)
+    return fit_model
 
 
 if __name__ == "__main__":
