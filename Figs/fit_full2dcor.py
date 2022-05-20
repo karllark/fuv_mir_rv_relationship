@@ -4,6 +4,7 @@ from scipy.stats import multivariate_normal
 import matplotlib.pyplot as plt
 from astropy.modeling import models
 import scipy.optimize as op
+import emcee
 
 
 def lnlike_correlated(params, measured_vals, updated_model, cov, intinfo, x):
@@ -69,7 +70,26 @@ def fit_2Dcorrelated(x, y, covs, fit_model, intinfo):
     result = op.minimize(nll, params, args=(y, fit_model, covs, intinfo, x))
 
     fit_model.parameters = result["x"]
+    fit_model.result = result
     print("end:", fit_model.parameters)
+    return fit_model
+
+
+def fit_2Dcorrelated_emcee(x, y, covs, fit_model, intinfo, nsteps=100):
+    """
+    Do emcee based sampling with correlated lnlike function.
+    """
+    ndim = len(fit_model.parameters)
+    nwalkers = 2 * ndim
+    pos = fit_model.parameters + 1e-4 * np.random.randn(nwalkers, ndim)
+
+    sampler = emcee.EnsembleSampler(
+        nwalkers, ndim, lnlike_correlated, args=(y, fit_model, covs, intinfo, x)
+    )
+    sampler.run_mcmc(pos, nsteps, progress=True)
+
+    fit_model.sampler = sampler
+
     return fit_model
 
 

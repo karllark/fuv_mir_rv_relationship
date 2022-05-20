@@ -22,7 +22,7 @@ from helpers import G21mod, G22  # , G22pow  # , G22opt
 
 
 def plot_irv_ssamp(
-    ax, itab, label, color="k", linestyle="solid", simpfit=True, inst=None
+    ax, itab, label, color="k", linestyle="solid", simpfit=False, inst=None
 ):
 
     # remove bad regions
@@ -63,12 +63,6 @@ def plot_irv_ssamp(
     bvals = itab["npts"] == 0
     itab["slopes"][bvals] = np.NAN
     itab["intercepts"][bvals] = np.NAN
-    itab["mcslopes"][bvals] = np.NAN
-    itab["mcintercepts"][bvals] = np.NAN
-    itab["hfslopes"][bvals] = np.NAN
-    itab["hfintercepts"][bvals] = np.NAN
-    itab["hfsigmas"][bvals] = np.NAN
-    itab["hfrmss"][bvals] = np.NAN
     gvals = itab["npts"] >= 0
     if simpfit:
         for k, cname in enumerate(["intercepts", "slopes", "rmss"]):
@@ -79,7 +73,77 @@ def plot_irv_ssamp(
                 color="red",
                 alpha=0.75,
             )
+    if "d2slopes" in itab.colnames:
+        itab["d2slopes"][bvals] = np.NAN
+        itab["d2intercepts"][bvals] = np.NAN
+        itab["d2slopes_std"] = itab["d2slopes"] * 0.1
+        itab["d2intercepts_std"] = itab["d2intercepts"] * 0.1
+        for k, cname in enumerate(["d2intercepts", "d2slopes"]):
+            ax[k * 2].plot(
+                itab["waves"][gvals],
+                itab[cname][gvals],
+                linestyle="dotted",
+                color=color,
+                label=label,
+                alpha=0.75,
+            )
+            ax[k * 2].fill_between(
+                itab["waves"][gvals].value,
+                itab[cname][gvals] - itab[f"{cname}_std"],
+                itab[cname][gvals] + itab[f"{cname}_std"],
+                color=color,
+                alpha=0.25,
+            )
+
+        # cubic fits
+        itab["d2curves_quad"][bvals] = np.NAN
+        itab["d2slopes_quad"][bvals] = np.NAN
+        itab["d2intercepts_quad"][bvals] = np.NAN
+        itab["d2curves_quad_std"] = itab["d2curves_quad"] * 0.1
+        itab["d2slopes_quad_std"] = itab["d2slopes_quad"] * 0.1
+        itab["d2intercepts_quad_std"] = itab["d2intercepts_quad"] * 0.1
+        for k, cname in enumerate(["d2intercepts_quad", "d2slopes_quad", "d2curves_quad"]):
+            ax[k * 2].plot(
+                itab["waves"][gvals],
+                itab[cname][gvals],
+                linestyle="solid",
+                color=color,
+                label=label,
+                alpha=0.75,
+            )
+            ax[k * 2].fill_between(
+                itab["waves"][gvals].value,
+                itab[cname][gvals] - itab[f"{cname}_std"],
+                itab[cname][gvals] + itab[f"{cname}_std"],
+                color=color,
+                alpha=0.25,
+            )
+
+        # likelihood ratios
+        itab["d2lnlikes"][bvals] = np.NAN
+        itab["d2lnlikes_quad"][bvals] = np.NAN
+        lnratio = itab["d2lnlikes_quad"][gvals] - itab["d2lnlikes"][gvals]
+        ax[4].plot(
+            itab["waves"][gvals],
+            lnratio,
+            linestyle="solid",
+            color="black",
+            label=label,
+            alpha=0.75,
+        )
+
+        return (
+            itab["npts"],
+            itab["waves"],
+            itab["d2intercepts_quad"],
+            itab["d2slopes_quad"],
+            itab["d2intercepts_std"],
+            itab["d2slopes_std"],
+        )
+
     if "mcslopes" in itab.colnames:
+        itab["mcslopes"][bvals] = np.NAN
+        itab["mcintercepts"][bvals] = np.NAN
         for k, cname in enumerate(["mcintercepts", "mcslopes"]):
             ax[k * 2].plot(
                 itab["waves"][gvals],
@@ -97,6 +161,10 @@ def plot_irv_ssamp(
                 alpha=0.25,
             )
     if "hfslopes" in itab.colnames:
+        itab["hfslopes"][bvals] = np.NAN
+        itab["hfintercepts"][bvals] = np.NAN
+        itab["hfsigmas"][bvals] = np.NAN
+        itab["hfrmss"][bvals] = np.NAN
         for k, cname in enumerate(["hfintercepts", "hfslopes", "hfsigmas"]):
             ax[k * 2].plot(
                 itab["waves"][gvals],
@@ -115,17 +183,6 @@ def plot_irv_ssamp(
                     color="black",
                     alpha=0.25,
                 )
-
-    return (
-        itab["npts"],
-        itab["waves"],
-        itab["intercepts"],
-        itab["slopes"],
-        # itab["mcintercepts"],
-        # itab["mcslopes"],
-        itab["mcintercepts_std"],
-        itab["mcslopes_std"],
-    )
 
 
 def plot_resid(ax, data, dindx, model, color):
@@ -763,12 +820,13 @@ if __name__ == "__main__":
     ax[4].set_yscale(yrange_s_type)
     ax[0].set_ylim(yrange_a)
     ax[2].set_ylim(yrange_b)
-    ax[4].set_ylim(yrange_s)
+    # ax[4].set_ylim(yrange_s)
     ax[0].set_ylabel("intercept (a)")
     ax[1].set_ylabel("a - fit")
     ax[2].set_ylabel("slope (b)")
     ax[3].set_ylabel("b - fit")
-    ax[4].set_ylabel(r"scatter ($\sigma$)")
+    # ax[4].set_ylabel(r"scatter ($\sigma$)")
+    ax[4].set_ylabel("c2 or ln(like_ratio)")
     # ax[3, 0].set_ylabel("scatter")
 
     for i in range(5):

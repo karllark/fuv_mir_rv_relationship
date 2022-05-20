@@ -12,16 +12,17 @@ from scipy.linalg import eigh
 import astropy.units as u
 from astropy.modeling import models, fitting
 from astropy.table import Table
+
 # from astropy.stats import sigma_clip
 
 from hyperfit.linfit import LinFit as HFLinFit
 
 from measure_extinction.extdata import ExtData
 
-from fit_irv import get_irvs, get_alav
+from fit_irv import get_irvs, get_alav, get_best_fit_params
 from helpers import mcfit_cov, mcfit_cov_quad
 
-from fit_full2dcor import fit_2Dcorrelated
+from fit_full2dcor import fit_2Dcorrelated, fit_2Dcorrelated_emcee
 
 
 def plot_exts(exts, rvs, avs, ctype, cwave, psym, label, alpha=0.5):
@@ -424,7 +425,7 @@ if __name__ == "__main__":
 
         # xvals = None
 
-        do_hfit = False
+        do_hfit = True
         do_mcfit = False
 
         # fit a line
@@ -443,6 +444,7 @@ if __name__ == "__main__":
             # )
             # fitted_line, mask = or_fit(line_init, xvals[gvals], yvals[gvals])
             # not_mask = np.logical_not(mask)
+            not_mask = np.full(len(xvals[gvals]), True)
             # bad_data = np.ma.masked_array(yvals[gvals], mask=not_mask)
             # ax[i].plot(xvals[gvals], bad_data, "rx")
 
@@ -469,7 +471,7 @@ if __name__ == "__main__":
             cov_xy = (xvals[gvals] + 1 / 3.1) * yvals[gvals] * (avfrac[gvals] ** 2)
             corr_xy = cov_xy / (xvals_unc[gvals] * yvals_unc[gvals])
             # put a max on the correlation coefficient
-            max_corr = 0.90
+            max_corr = 0.99
             corr_xy[corr_xy > max_corr] = max_corr
 
             covs = np.zeros((ndata, 2, 2))
@@ -489,16 +491,66 @@ if __name__ == "__main__":
             )
 
             # fit with new full 2D fitting
-            intinfo = [-0.20, 0.20, 0.0001]
-            fit2d_quad = fit_2Dcorrelated(
+            intinfo = [-0.20, 0.20, 0.001]
+            fit2d_line = fit_2Dcorrelated(
                 xvals[gvals], yvals[gvals], covs, fitted_line, intinfo
             )
-            ax[i].plot(mod_xvals, fitted_line(mod_xvals), "m--", alpha=0.75, lw=3)
+            print(fit2d_line.result["fun"])
+
+            # nsteps = 100
+            # fit2d_line = fit_2Dcorrelated_emcee(
+            #     xvals[gvals],
+            #     yvals[gvals],
+            #     covs,
+            #     fit2d_line,
+            #     intinfo,
+            #     nsteps=nsteps,
+            # )
+            # bparams = get_best_fit_params(fit2d_line.sampler)
+            # print(bparams)
+            #
+            # samples = fit2d_line.sampler.get_chain(flat=True, discard=int(0.1 * nsteps))
+            #
+            # d2slopes = np.mean(samples[:, 1])
+            # d2slopes_unc = np.std(samples[:, 1])
+            # d2intercepts = np.mean(samples[:, 0])
+            # d2intercepts_unc = np.std(samples[:, 0])
+            # print(d2slopes, d2intercepts)
+            # print(d2slopes_unc, d2intercepts_unc)
+            #
+            # fit2d_line.slope = d2slopes
+            # fit2d_line.intercept = d2intercepts
+
+            ax[i].plot(mod_xvals, fit2d_line(mod_xvals), "m--", alpha=0.75, lw=3)
 
             fit2d_quad = fit_2Dcorrelated(
                 xvals[gvals], yvals[gvals], covs, fitted_quad, intinfo
             )
-            ax[i].plot(mod_xvals, fitted_quad(mod_xvals), "m:", alpha=0.75, lw=3)
+            print(fit2d_quad.result["fun"])
+
+            # fit2d_quad = fit_2Dcorrelated_emcee(
+            #     xvals[gvals],
+            #     yvals[gvals],
+            #     covs,
+            #     fit2d_quad,
+            #     intinfo,
+            #     nsteps=nsteps,
+            # )
+            # bparams = get_best_fit_params(fit2d_quad.sampler)
+            # print(bparams)
+            #
+            # samples = fit2d_quad.sampler.get_chain(flat=True, discard=int(0.1 * nsteps))
+            #
+            # d2curves = np.mean(samples[:, 2])
+            # d2curves_unc = np.std(samples[:, 2])
+            # d2slopes = np.mean(samples[:, 1])
+            # d2slopes_unc = np.std(samples[:, 1])
+            # d2intercepts = np.mean(samples[:, 0])
+            # d2intercepts_unc = np.std(samples[:, 0])
+            # print(d2intercepts, d2slopes, d2curves)
+            # print(d2intercepts_unc, d2slopes_unc, d2curves_unc)
+
+            ax[i].plot(mod_xvals, fit2d_quad(mod_xvals), "m:", alpha=0.75, lw=3)
 
             # do Monte Carlo fitting if asked
             if do_mcfit:
@@ -533,9 +585,9 @@ if __name__ == "__main__":
             if do_hfit:
                 # only fit the non-rejected points
                 xvals_good = xvals[gvals][not_mask]
-                xvals_unc_good = xvals_unc[gvals][not_mask]
+                # xvals_unc_good = xvals_unc[gvals][not_mask]
                 yvals_good = yvals[gvals][not_mask]
-                yvals_unc_good = yvals_unc[gvals][not_mask]
+                # yvals_unc_good = yvals_unc[gvals][not_mask]
                 covs_good = covs[not_mask, :, :]
                 ndata = len(xvals_good)
 
@@ -561,6 +613,7 @@ if __name__ == "__main__":
                 # print(bounds)
                 # bounds = ((-2.0, 50.0), (-5.0, 30.0), (1.0e-5, 5.0))
                 bounds = ((-5.0, 30.0), (-1.0, 20.0), (1.0e-5, 5.0))
+                # bounds = ((-5.0, 30.0), (-1.0, 20.0), (0.0, 1e-5))
                 # hf_fit_params = hf_fit.optimize(bounds, verbose=False)
                 mcmc_samples, mcmc_lnlike = hf_fit.emcee(bounds, verbose=False)
                 print(np.mean(mcmc_samples, axis=1), np.std(mcmc_samples, axis=1))
@@ -568,10 +621,10 @@ if __name__ == "__main__":
                 mean_stds = np.std(mcmc_samples, axis=1)
                 # mod_yvals_hf = hf_fit.coords[1] + hf_fit.coords[0] * mod_xvals
                 mod_yvals_hf = mean_params[1] + mean_params[0] * mod_xvals
-                ax[i].plot(mod_xvals, mod_yvals_hf, "k-", label="HF Fit")
+                ax[i].plot(mod_xvals, mod_yvals_hf, "b--", label="HF Fit")
 
-                ax[i].plot(mod_xvals, mod_yvals_hf - hf_fit.vert_scat, "k--")
-                ax[i].plot(mod_xvals, mod_yvals_hf + hf_fit.vert_scat, "k--")
+                ax[i].plot(mod_xvals, mod_yvals_hf - hf_fit.vert_scat, "b:")
+                ax[i].plot(mod_xvals, mod_yvals_hf + hf_fit.vert_scat, "b:")
 
                 # print(hf_fit_params)
 
