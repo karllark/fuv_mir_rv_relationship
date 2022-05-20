@@ -29,7 +29,7 @@ if __name__ == "__main__":
         # allows for a new fitting of A(V) based on a powerlaw
         av, av_unc = ext.columns["AV"]
         # ebv, ebv_unc = ext.columns["EBV"]
-        # rv, rv_unc = ext.columns["RV"]
+        rv, rv_unc = ext.columns["RV"]
         # print(rv, rv_unc)
         #
         # if "AV" in ext.columns.keys():
@@ -40,6 +40,9 @@ if __name__ == "__main__":
         # print(ebv, ebv_unc)
         # print(rv, rv_unc)
         # exit()
+
+        print(ext.columns["AV"], rv, rv_unc)
+        print(ext.columns["EBV"])
 
         for src in ext.waves.keys():
             gvals = ext.npts[src] > 0

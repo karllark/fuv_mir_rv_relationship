@@ -11,7 +11,7 @@ from astropy.modeling.models import Linear1D
 from astropy.modeling.fitting import (
     LinearLSQFitter,
     FittingWithOutlierRemoval,
-    LevMarLSQFitter,
+    # LevMarLSQFitter,
 )
 
 # from dust_extinction.shapes import G21

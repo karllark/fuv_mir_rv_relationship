@@ -17,6 +17,8 @@ if __name__ == "__main__":
         ifile = fname
         ext = ExtData(ifile)
 
+        print(ext.columns["AV"], ext.columns["RV"])
+
         next = rebin_extdata(ext, "SpeX_SXD", np.array([0.8, 2.5]) * u.micron, 500.)
         next = rebin_extdata(next, "SpeX_LXD", np.array([2.0, 5.5]) * u.micron, 500.)
         next = rebin_extdata(next, "IUE", np.array([0.100, 0.35]) * u.micron, 500.0)

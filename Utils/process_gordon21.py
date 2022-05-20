@@ -17,6 +17,8 @@ if __name__ == "__main__":
         ext = ExtData(ifile)
         ext.calc_RV()
 
+        print(ext.columns["AV"], ext.columns["RV"])
+
         # no rebin for IRS data as resolution is below 500 already
         next = rebin_extdata(ext, "IUE", np.array([0.100, 0.35]) * u.micron, 500.0)
 

@@ -29,8 +29,10 @@ class ExtData(ExtDataStock):
         sindxs = np.argsort(np.absolute(1.0 / spec_dict["XVALS"] - 0.44))
         self.columns["EBV"] = (
             spec_dict["E44MIN55"],
-            spec_dict["EXTCURV_RAW_SIG"][sindxs[0]],
+            max(spec_dict["EXTCURV_RAW_SIG"][sindxs[0]], 0.02)
         )
+
+        print(self.columns["EBV"])
 
         (indxs,) = np.where(1.0 / spec_dict["XVALS"] < 1.0)
         self.waves["STIS"] = (1.0 / spec_dict["XVALS"][indxs]) * u.micron
@@ -65,13 +67,12 @@ if __name__ == "__main__":
 
         # get A(V) values
         ext.calc_AV_JHK()
-        print(ifile, ext.columns["AV"])
 
         if "AV" in ext.columns.keys():
             ext.calc_RV()
 
             rv, rv_unc = ext.columns["RV"]
-            print(rv, rv_unc)
+            print(ext.columns["AV"], rv, rv_unc)
             # exit()
 
             ext.type = "elx"
