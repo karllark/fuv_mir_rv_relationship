@@ -96,28 +96,28 @@ def plot_irv_ssamp(
             )
 
         # cubic fits
-        itab["d2curves_quad"][bvals] = np.NAN
-        itab["d2slopes_quad"][bvals] = np.NAN
-        itab["d2intercepts_quad"][bvals] = np.NAN
-        itab["d2curves_quad_std"] = itab["d2curves_quad"] * 0.1
-        itab["d2slopes_quad_std"] = itab["d2slopes_quad"] * 0.1
-        itab["d2intercepts_quad_std"] = itab["d2intercepts_quad"] * 0.1
-        for k, cname in enumerate(["d2intercepts_quad", "d2slopes_quad", "d2curves_quad"]):
-            ax[k * 2].plot(
-                itab["waves"][gvals],
-                itab[cname][gvals],
-                linestyle="solid",
-                color=color,
-                label=label,
-                alpha=0.75,
-            )
-            ax[k * 2].fill_between(
-                itab["waves"][gvals].value,
-                itab[cname][gvals] - itab[f"{cname}_std"],
-                itab[cname][gvals] + itab[f"{cname}_std"],
-                color=color,
-                alpha=0.25,
-            )
+        # itab["d2curves_quad"][bvals] = np.NAN
+        # itab["d2slopes_quad"][bvals] = np.NAN
+        # itab["d2intercepts_quad"][bvals] = np.NAN
+        # itab["d2curves_quad_std"] = itab["d2curves_quad"] * 0.1
+        # itab["d2slopes_quad_std"] = itab["d2slopes_quad"] * 0.1
+        # itab["d2intercepts_quad_std"] = itab["d2intercepts_quad"] * 0.1
+        # for k, cname in enumerate(["d2intercepts_quad", "d2slopes_quad", "d2curves_quad"]):
+        #     ax[k * 2].plot(
+        #         itab["waves"][gvals],
+        #         itab[cname][gvals],
+        #         linestyle="solid",
+        #         color=color,
+        #         label=label,
+        #         alpha=0.75,
+        #     )
+        #     ax[k * 2].fill_between(
+        #         itab["waves"][gvals].value,
+        #         itab[cname][gvals] - itab[f"{cname}_std"],
+        #         itab[cname][gvals] + itab[f"{cname}_std"],
+        #         color=color,
+        #         alpha=0.25,
+        #     )
 
         # likelihood ratios
         itab["d2lnlikes"][bvals] = np.NAN
@@ -135,8 +135,8 @@ def plot_irv_ssamp(
         return (
             itab["npts"],
             itab["waves"],
-            itab["d2intercepts_quad"],
-            itab["d2slopes_quad"],
+            itab["d2intercepts"],
+            itab["d2slopes"],
             itab["d2intercepts_std"],
             itab["d2slopes_std"],
         )
