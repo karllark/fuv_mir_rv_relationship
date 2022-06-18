@@ -66,12 +66,12 @@ def fit_2Dcorrelated(x, y, covs, fit_model, intinfo):
         return -lnlike_correlated(*args)
 
     params = fit_model.parameters
-    print("start:", params)
+    # print("start:", params)
     result = op.minimize(nll, params, args=(y, fit_model, covs, intinfo, x))
 
     fit_model.parameters = result["x"]
     fit_model.result = result
-    print("end:", fit_model.parameters)
+    # print("end:", fit_model.parameters)
     return fit_model
 
 
@@ -125,7 +125,7 @@ if __name__ == "__main__":
 
     result = op.minimize(nll, params, args=(y, line_orig, covs, intinfo, x))
     nparams = result["x"]
-    print(nparams)
+    # print(nparams)
 
     fitted_line = models.Linear1D(slope=nparams[0], intercept=nparams[1])
 

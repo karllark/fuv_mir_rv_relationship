@@ -414,7 +414,12 @@ if __name__ == "__main__":
         colors = [aiue_color, gor09_color, fit19_color]
         fm90 = FM90()
         fitted_models = plot_wavereg(
-            ax, [fm90, fm90], datasets, colors, wrange=[0.09, 0.33] * u.micron
+            ax,
+            [fm90, fm90],
+            datasets,
+            colors,
+            wrange=[0.09, 0.33] * u.micron,
+            no_weights=True,
         )
         ax[1].set_ylim(-0.2, 0.2)
         ax[3].set_ylim(-3.0, 3.0)
@@ -820,7 +825,7 @@ if __name__ == "__main__":
     ax[4].set_yscale(yrange_s_type)
     ax[0].set_ylim(yrange_a)
     ax[2].set_ylim(yrange_b)
-    # ax[4].set_ylim(yrange_s)
+    ax[4].set_ylim(yrange_s)
     ax[0].set_ylabel("intercept (a)")
     ax[1].set_ylabel("a - fit")
     ax[2].set_ylabel("slope (b)")

@@ -7,7 +7,7 @@ import astropy.units as u
 from measure_extinction.extdata import ExtData
 from dust_extinction.parameter_averages import CCM89, F19, GCC09
 
-from helpers import G22, G22MC, G22HF
+from helpers import G22, G22MC, G22HF, G22LFnoweight
 
 
 if __name__ == "__main__":
@@ -71,19 +71,22 @@ if __name__ == "__main__":
     rvs = [args.rv - args.drv, args.rv, args.rv + args.drv]
     for rv in rvs:
         g22mod = G22(Rv=rv)
-        ax.plot(modx, g22mod(modx), color="black", lw=4, alpha=0.5)
+        ax.plot(modx, g22mod(modx), color="black", lw=4, alpha=0.5, label="G22")
+
+        g22lfmod = G22LFnoweight(Rv=rv)
+        ax.plot(modx, g22lfmod(modx), color="magenta", alpha=0.5, linestyle="dotted", lw=2, label="G22LF")
 
         g22mcmod = G22MC(Rv=rv)
-        ax.plot(modx, g22mcmod(modx), color="green", alpha=0.5, linestyle="dotted", lw=2)
+        ax.plot(modx, g22mcmod(modx), color="green", alpha=0.5, linestyle="dotted", lw=2, label="G22MC")
 
         g22hfmod = G22HF(Rv=rv)
-        ax.plot(modx, g22hfmod(modx), color="blue", alpha=0.5, linestyle="dashed", lw=2)
+        ax.plot(modx, g22hfmod(modx), color="blue", alpha=0.5, linestyle="dashed", lw=2, label="G22HF")
 
         ccm89mod = CCM89(Rv=rv)
-        ax.plot(modx2, ccm89mod(modx2), linestyle="dashed", color="black", alpha=0.25)
+        ax.plot(modx2, ccm89mod(modx2), linestyle="dashed", color="black", alpha=0.25, label="CCM89")
 
         f19mod = F19(Rv=rv)
-        ax.plot(modx2, f19mod(modx2), linestyle="dotted", color="black", alpha=0.25)
+        ax.plot(modx2, f19mod(modx2), linestyle="dotted", color="black", alpha=0.25, label="F19")
 
     ax.set_xscale("log")
     ax.set_yscale("log")
@@ -99,6 +102,8 @@ if __name__ == "__main__":
         ax.set_ylim(0.2, 3.0)
 
     ax.set_title(f"R(V) = {args.rv} +/- {args.drv}")
+
+    ax.legend(ncol=2)
 
     fig.tight_layout()
 

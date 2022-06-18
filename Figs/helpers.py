@@ -4,7 +4,7 @@ from numpy.random import default_rng
 import astropy.units as u
 
 from astropy.modeling import Fittable1DModel, Parameter
-from astropy.modeling.models import Drude1D, Polynomial1D  # , PowerLaw1D
+from astropy.modeling.models import Drude1D, Polynomial1D, PowerLaw1D
 
 from astropy.stats import sigma_clip
 from astropy.modeling.models import Linear1D
@@ -36,6 +36,172 @@ def smoothstep(x, x_min=0, x_max=1, N=1):
 
 
 class G22(BaseExtRvModel):
+    r"""
+    Gordon et al. (2022) Milky Way R(V) dependent model
+
+    Parameters
+    ----------
+    Rv: float
+        R(V) = A(V)/E(B-V) = total-to-selective extinction
+
+    Raises
+    ------
+    InputParameterError
+       Input Rv values outside of defined range
+
+    Notes
+    -----
+    From Gordon et al. (2022, in prep.)
+
+    Example showing CCM89 curves for a range of R(V) values.
+
+    .. plot::
+        :include-source:
+
+        import numpy as np
+        import matplotlib.pyplot as plt
+        import astropy.units as u
+
+        from dust_extinction.parameter_averages import G22
+
+        fig, ax = plt.subplots()
+
+        # generate the curves and plot them
+        x = np.arange(0.5,10.0,0.1)/u.micron
+
+        Rvs = ['2.0','3.0','4.0','5.0','6.0']
+        for cur_Rv in Rvs:
+           ext_model = G22(Rv=cur_Rv)
+           ax.plot(x,ext_model(x),label='R(V) = ' + str(cur_Rv))
+
+        ax.set_xlabel(r'$x$ [$\mu m^{-1}$]')
+        ax.set_ylabel(r'$A(x)/A(V)$')
+
+        ax.legend(loc='best')
+        plt.show()
+    """
+
+    Rv_range = [2.0, 6.0]
+    x_range = x_range_G22
+
+    def evaluate(self, in_x, Rv):
+        """
+        G22 function
+
+        Parameters
+        ----------
+        in_x: float
+           expects either x in units of wavelengths or frequency
+           or assumes wavelengths in wavenumbers [1/micron]
+
+           internally wavenumbers are used
+
+        Returns
+        -------
+        axav: np array (float)
+            A(x)/A(V) extinction curve [mag]
+
+        Raises
+        ------
+        ValueError
+           Input x values outside of defined range
+        """
+        x = _get_x_in_wavenumbers(in_x)
+
+        # check that the wavenumbers are within the defined range
+        _test_valid_x_range(x, self.x_range, "G22")
+
+        # setup the a & b coefficient vectors
+        n_x = len(x)
+        self.a = np.zeros(n_x)
+        self.b = np.zeros(n_x)
+
+        # define the ranges
+        ir_indxs = np.where(np.logical_and(1.0 / 35.0 <= x, x < 1.0 / 1.0))
+        opt_indxs = np.where(np.logical_and(1.0 / 1.0 <= x, x < 1.0 / 0.3))
+        uv_indxs = np.where(np.logical_and(1.0 / 0.3 <= x, x <= 1.0 / 0.09))
+
+        # overlap ranges
+        optir_waves = [1.0, 1.1]
+        optir_overlap = (x >= 1.0 / optir_waves[1]) & (x <= 1.0 / optir_waves[0])
+        uvopt_waves = [0.3, 0.33]
+        uvopt_overlap = (x >= 1.0 / uvopt_waves[1]) & (x <= 1.0 / uvopt_waves[0])
+
+        # NIR/MIR
+        # fmt: off
+        # (scale, alpha1, alpha2, swave, swidth), sil1, sil2
+        ir_a = [0.38982, 1.72802, 1.02603, 3.92291, 8.37168,
+                0.06434, 9.81785, 2.17175, -0.28987,
+                0.02826, 19.78533, 17., -0.27]
+        # ir_b = [-1.07917, 1., -1.18025]
+        ir_b = [-1.02151, 1., -1.17596]
+        # ir_b = [-0.3941, 12.18675, -101.28211, 333.40123, -536.15058,
+        #         415.3248, -123.82645]
+        # fmt: on
+        g21mod = G21mod()
+        g21mod.parameters = ir_a
+        self.a[ir_indxs] = g21mod(x[ir_indxs] / u.micron)
+
+        irpow = PowerLaw1D()
+        irpow.parameters = ir_b
+        self.b[ir_indxs] = irpow(x[ir_indxs])
+        # irpoly = Polynomial1D(6)
+        # irpoly.parameters = ir_b
+        # self.b[ir_indxs] = irpoly(x[ir_indxs])
+
+        # optical
+        # fmt: off
+        # polynomial coeffs, ISS1, ISS2, ISS3
+        opt_a = [-0.70783, 1.42617, -0.43445, 0.10785, -0.01129,
+                 0.04326, 2.288, 0.243,
+                 0.03416, 2.054, 0.179,
+                 0.01197, 1.587, 0.243]
+        opt_b = [-1.12257, 0.50781, -0.72101, 0.55661, -0.08087,
+                 0.22524, 2.288, 0.243,
+                 0.30337, 2.054, 0.179,
+                 0.11669, 1.587, 0.243]
+        # fmt: on
+        m20_model_a = Polynomial1D(4) + Drude1D() + Drude1D() + Drude1D()
+        m20_model_a.parameters = opt_a
+        self.a[opt_indxs] = m20_model_a(x[opt_indxs])
+        m20_model_b = Polynomial1D(4) + Drude1D() + Drude1D() + Drude1D()
+        m20_model_b.parameters = opt_b
+        self.b[opt_indxs] = m20_model_b(x[opt_indxs])
+
+        # overlap between optical/ir
+        weights = (1.0 / optir_waves[1] - x[optir_overlap]) / (
+            1.0 / optir_waves[1] - 1.0 / optir_waves[0]
+        )
+        self.a[optir_overlap] = weights * m20_model_a(x[optir_overlap])
+        self.a[optir_overlap] += (1.0 - weights) * g21mod(x[optir_overlap] / u.micron)
+        self.b[optir_overlap] = weights * m20_model_b(x[optir_overlap])
+        self.b[optir_overlap] += (1.0 - weights) * irpow(x[optir_overlap])
+
+        # Ultraviolet
+        uv_a = [0.81796, 0.27968, 1.02785, 0.11001, 4.59999, 0.99004]
+        uv_b = [-2.98641, 1.89734, 3.3836, 0.63903, 4.60001, 0.99007]
+
+        fm90_model_a = FM90()
+        fm90_model_a.parameters = uv_a
+        self.a[uv_indxs] = fm90_model_a(x[uv_indxs] / u.micron)
+        fm90_model_b = FM90()
+        fm90_model_b.parameters = uv_b
+        self.b[uv_indxs] = fm90_model_b(x[uv_indxs] / u.micron)
+
+        # overlap between uv/optical
+        weights = (1.0 / uvopt_waves[1] - x[uvopt_overlap]) / (
+            1.0 / uvopt_waves[1] - 1.0 / uvopt_waves[0]
+        )
+        self.a[uvopt_overlap] = weights * fm90_model_a(x[uvopt_overlap] / u.micron)
+        self.a[uvopt_overlap] += (1.0 - weights) * m20_model_a(x[uvopt_overlap])
+        self.b[uvopt_overlap] = weights * fm90_model_b(x[uvopt_overlap] / u.micron)
+        self.b[uvopt_overlap] += (1.0 - weights) * m20_model_b(x[uvopt_overlap])
+
+        # return A(x)/A(V)
+        return self.a + self.b * (1 / Rv - 1 / 3.1)
+
+
+class G22LFnoweight(BaseExtRvModel):
     r"""
     Gordon et al. (2022) Milky Way R(V) dependent model
 

@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import astropy.units as u
 
-from dust_extinction.parameter_averages import CCM89
+from dust_extinction.parameter_averages import CCM89, F19
 
 from helpers import G22
 
@@ -28,13 +28,16 @@ if __name__ == '__main__':
 
     modx = np.logspace(np.log10(0.091), np.log10(34.0), 1000) * u.micron
     modx2 = np.logspace(np.log10(0.115), np.log10(3.0), 1000) * u.micron
-    rvs = [2.5, 3.1, 4.0, 5.5]
+    rvs = [2.0, 2.5, 3.1, 4.0, 5.5, 6.0]
     for rv in rvs:
         g22mod = G22(Rv=rv)
         ax.plot(modx, g22mod(modx), label=f"R(V) = {rv:.1f}")
 
         ccm89mod = CCM89(Rv=rv)
         ax.plot(modx2, ccm89mod(modx2), linestyle="dashed")
+
+        f19mod = F19(Rv=rv)
+        ax.plot(modx2, f19mod(modx2), linestyle="dotted")
 
     ax.set_xscale("log")
     ax.set_yscale("log")

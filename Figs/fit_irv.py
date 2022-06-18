@@ -129,10 +129,12 @@ def fit_allwaves(
     # d2slopes_unc = np.zeros((nwaves))
     d2intercepts = np.zeros((nwaves))
     # d2intercepts_unc = np.zeros((nwaves))
+    d2rmss = np.zeros((nwaves))
     d2lnlikes = np.zeros((nwaves))
     d2curves_quad = np.zeros((nwaves))
     d2slopes_quad = np.zeros((nwaves))
     d2intercepts_quad = np.zeros((nwaves))
+    d2rmss_quad = np.zeros((nwaves))
     d2lnlikes_quad = np.zeros((nwaves))
 
     mcslopes = np.zeros((nwaves))
@@ -234,6 +236,10 @@ def fit_allwaves(
                 )
                 d2slopes[k] = fit2d_line.slope.value
                 d2intercepts[k] = fit2d_line.intercept.value
+                d2rmss[k] = np.sqrt(
+                    np.sum(np.square(yvals[gvals] - fit2d_line(xvals[gvals])))
+                    / (npts[k] - 1)
+                )
                 d2lnlikes[k] = -1.0 * fit2d_line.result["fun"]
 
                 # initial unweighted quadratic fit
@@ -247,6 +253,10 @@ def fit_allwaves(
                 d2curves_quad[k] = fit2d_quad.c2.value
                 d2slopes_quad[k] = fit2d_quad.c1.value
                 d2intercepts_quad[k] = fit2d_quad.c0.value
+                d2rmss_quad[k] = np.sqrt(
+                    np.sum(np.square(yvals[gvals] - fit2d_quad(xvals[gvals])))
+                    / (npts[k] - 1)
+                )
                 d2lnlikes_quad[k] = -1.0 * fit2d_quad.result["fun"]
 
             # do Monte Carlo fitting if asked
@@ -327,9 +337,11 @@ def fit_allwaves(
     if do_2dfit:
         otab["d2slopes"] = d2slopes
         otab["d2intercepts"] = d2intercepts
+        otab["d2rmss"] = d2rmss
         otab["d2lnlikes"] = d2lnlikes
         otab["d2curves_quad"] = d2curves_quad
         otab["d2slopes_quad"] = d2slopes_quad
+        otab["d2rmss_quad"] = d2rmss_quad
         otab["d2intercepts_quad"] = d2intercepts_quad
         otab["d2lnlikes_quad"] = d2lnlikes_quad
 
