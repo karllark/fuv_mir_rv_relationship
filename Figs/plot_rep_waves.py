@@ -425,8 +425,9 @@ if __name__ == "__main__":
 
         # xvals = None
 
-        do_hfit = True
+        do_hfit = False
         do_mcfit = False
+        do_quad = False
 
         # fit a line
         if xvals is not None:
@@ -448,22 +449,23 @@ if __name__ == "__main__":
             # bad_data = np.ma.masked_array(yvals[gvals], mask=not_mask)
             # ax[i].plot(xvals[gvals], bad_data, "rx")
 
-            ax[i].plot(
-                mod_xvals, fitted_line(mod_xvals), "k--", label="Fit", alpha=0.5, lw=3
-            )
+            # ax[i].plot(
+            #     mod_xvals, fitted_line(mod_xvals), "k:", label="Fit", alpha=0.5, lw=3
+            # )
 
             # quadratic fit
-            quad_init = models.Polynomial1D(2)
-            fitted_quad = fit(quad_init, xvals[gvals], yvals[gvals])
-            # fitted_quad, mask = or_fit(quad_init, xvals[gvals], yvals[gvals])
-            ax[i].plot(
-                mod_xvals,
-                fitted_quad(mod_xvals),
-                "k:",
-                label="Quad Fit",
-                alpha=0.5,
-                lw=3,
-            )
+            if do_quad:
+                quad_init = models.Polynomial1D(2)
+                fitted_quad = fit(quad_init, xvals[gvals], yvals[gvals])
+                # fitted_quad, mask = or_fit(quad_init, xvals[gvals], yvals[gvals])
+                ax[i].plot(
+                    mod_xvals,
+                    fitted_quad(mod_xvals),
+                    "k:",
+                    label="Quad Fit",
+                    alpha=0.5,
+                    lw=3,
+                )
 
             # setup the covariance matrices and plot the points
             ndata = np.sum(gvals)
@@ -471,7 +473,7 @@ if __name__ == "__main__":
             cov_xy = (xvals[gvals] + 1 / 3.1) * yvals[gvals] * (avfrac[gvals] ** 2)
             corr_xy = cov_xy / (xvals_unc[gvals] * yvals_unc[gvals])
             # put a max on the correlation coefficient
-            max_corr = 0.99
+            max_corr = 0.9999
             corr_xy[corr_xy > max_corr] = max_corr
 
             covs = np.zeros((ndata, 2, 2))
@@ -497,6 +499,8 @@ if __name__ == "__main__":
             )
             print(fit2d_line.result["fun"])
 
+            ax[i].plot(mod_xvals, fit2d_line(mod_xvals), "k-", alpha=0.75, lw=3)
+
             # nsteps = 100
             # fit2d_line = fit_2Dcorrelated_emcee(
             #     xvals[gvals],
@@ -521,12 +525,13 @@ if __name__ == "__main__":
             # fit2d_line.slope = d2slopes
             # fit2d_line.intercept = d2intercepts
 
-            ax[i].plot(mod_xvals, fit2d_line(mod_xvals), "m--", alpha=0.75, lw=3)
+            if do_quad:
+                fit2d_quad = fit_2Dcorrelated(
+                    xvals[gvals], yvals[gvals], covs, fitted_quad, intinfo
+                )
+                print(fit2d_quad.result["fun"])
 
-            fit2d_quad = fit_2Dcorrelated(
-                xvals[gvals], yvals[gvals], covs, fitted_quad, intinfo
-            )
-            print(fit2d_quad.result["fun"])
+                ax[i].plot(mod_xvals, fit2d_quad(mod_xvals), "m:", alpha=0.75, lw=3)
 
             # fit2d_quad = fit_2Dcorrelated_emcee(
             #     xvals[gvals],
@@ -549,8 +554,6 @@ if __name__ == "__main__":
             # d2intercepts_unc = np.std(samples[:, 0])
             # print(d2intercepts, d2slopes, d2curves)
             # print(d2intercepts_unc, d2slopes_unc, d2curves_unc)
-
-            ax[i].plot(mod_xvals, fit2d_quad(mod_xvals), "m:", alpha=0.75, lw=3)
 
             # do Monte Carlo fitting if asked
             if do_mcfit:
