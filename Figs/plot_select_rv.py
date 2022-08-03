@@ -24,20 +24,21 @@ if __name__ == '__main__':
     plt.rc("xtick.major", width=2)
     plt.rc("ytick.major", width=2)
 
-    fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(6, 5.5))
+    fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(10, 5.5))
 
     modx = np.logspace(np.log10(0.091), np.log10(34.0), 1000) * u.micron
     modx2 = np.logspace(np.log10(0.115), np.log10(3.0), 1000) * u.micron
-    rvs = [2.0, 2.5, 3.1, 4.0, 5.5, 6.0]
-    for rv in rvs:
+    rvs = [2.5, 3.1, 4.0, 5.5, 6.0]
+    colors = ['r', 'b', 'g', 'm', 'c']
+    for rv, ccol in zip(rvs, colors):
         g22mod = G22(Rv=rv)
-        ax.plot(modx, g22mod(modx), label=f"R(V) = {rv:.1f}")
+        ax.plot(modx, g22mod(modx), label=f"R(V) = {rv:.1f}", color=ccol)
 
         ccm89mod = CCM89(Rv=rv)
-        ax.plot(modx2, ccm89mod(modx2), linestyle="dashed")
+        ax.plot(modx2, ccm89mod(modx2), linestyle="dashed", color=ccol)
 
         f19mod = F19(Rv=rv)
-        ax.plot(modx2, f19mod(modx2), linestyle="dotted")
+        ax.plot(modx2, f19mod(modx2), linestyle="dotted", color=ccol)
 
     ax.set_xscale("log")
     ax.set_yscale("log")

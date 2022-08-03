@@ -3,3 +3,5 @@
 results
 data
 __pycache__
+*.fits
+*.dat

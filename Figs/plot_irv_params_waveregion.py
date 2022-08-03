@@ -87,13 +87,13 @@ def plot_irv_ssamp(
                 label=label,
                 alpha=0.75,
             )
-            ax[k * 2].fill_between(
-                itab["waves"][gvals].value,
-                itab[cname][gvals] - itab[f"{cname}_std"],
-                itab[cname][gvals] + itab[f"{cname}_std"],
-                color=color,
-                alpha=0.25,
-            )
+            # ax[k * 2].fill_between(
+            #     itab["waves"][gvals].value,
+            #     itab[cname][gvals] - itab[f"{cname}_std"],
+            #     itab[cname][gvals] + itab[f"{cname}_std"],
+            #     color=color,
+            #     alpha=0.25,
+            # )
 
         # cubic fits
         # itab["d2curves_quad"][bvals] = np.NAN
@@ -120,17 +120,17 @@ def plot_irv_ssamp(
         #     )
 
         # likelihood ratios
-        itab["d2lnlikes"][bvals] = np.NAN
-        itab["d2lnlikes_quad"][bvals] = np.NAN
-        lnratio = itab["d2lnlikes_quad"][gvals] - itab["d2lnlikes"][gvals]
-        ax[4].plot(
-            itab["waves"][gvals],
-            lnratio,
-            linestyle="solid",
-            color="black",
-            label=label,
-            alpha=0.75,
-        )
+        # itab["d2lnlikes"][bvals] = np.NAN
+        # itab["d2lnlikes_quad"][bvals] = np.NAN
+        # lnratio = itab["d2lnlikes_quad"][gvals] - itab["d2lnlikes"][gvals]
+        # ax[4].plot(
+        #     itab["waves"][gvals],
+        #     lnratio,
+        #     linestyle="solid",
+        #     color="black",
+        #     label=label,
+        #     alpha=0.75,
+        # )
 
         return (
             itab["npts"],
@@ -165,7 +165,8 @@ def plot_irv_ssamp(
         itab["hfintercepts"][bvals] = np.NAN
         itab["hfsigmas"][bvals] = np.NAN
         itab["hfrmss"][bvals] = np.NAN
-        for k, cname in enumerate(["hfintercepts", "hfslopes", "hfsigmas"]):
+        # for k, cname in enumerate(["hfintercepts", "hfslopes", "hfsigmas"]):
+        for k, cname in enumerate(["hfintercepts", "hfslopes"]):
             ax[k * 2].plot(
                 itab["waves"][gvals],
                 itab[cname][gvals],
@@ -175,7 +176,8 @@ def plot_irv_ssamp(
                 alpha=0.75,
             )
         if "hfslopes_std" in itab.colnames:
-            for k, cname in enumerate(["hfintercepts", "hfslopes", "hfsigmas"]):
+            # for k, cname in enumerate(["hfintercepts", "hfslopes", "hfsigmas"]):
+            for k, cname in enumerate(["hfintercepts", "hfslopes"]):
                 ax[k * 2].fill_between(
                     itab["waves"][gvals].value,
                     itab[cname][gvals] - itab[f"{cname}_std"],
@@ -343,13 +345,13 @@ if __name__ == "__main__":
     plt.rc("xtick.major", width=2)
     plt.rc("ytick.major", width=2)
     fig, ax = plt.subplots(
-        nrows=5,
+        nrows=4,
         ncols=1,
-        figsize=(10, 9),
+        figsize=(12, 9),
         sharex="col",
         gridspec_kw={
             "width_ratios": [1],
-            "height_ratios": [3, 1, 3, 1, 3],
+            "height_ratios": [3, 1, 3, 1],
             "wspace": 0.01,
             "hspace": 0.01,
         },
@@ -421,8 +423,8 @@ if __name__ == "__main__":
             wrange=[0.09, 0.33] * u.micron,
             no_weights=True,
         )
-        ax[1].set_ylim(-0.2, 0.2)
-        ax[3].set_ylim(-3.0, 3.0)
+        ax[1].set_ylim(-0.3, 0.3)
+        ax[3].set_ylim(-5.0, 5.0)
 
         # annotate features
         ax[0].annotate(
@@ -641,7 +643,7 @@ if __name__ == "__main__":
             no_weights=True,
         )
         ax[1].set_ylim(-0.015, 0.015)
-        ax[3].set_ylim(-0.2, 0.2)
+        ax[3].set_ylim(-0.4, 0.4)
 
         # plotting the components
         modx = np.linspace(0.8, 35.0, 100) * u.micron
@@ -816,32 +818,32 @@ if __name__ == "__main__":
             )
 
     # set the wavelength range for all the plots
-    ax[4].set_xscale("log")
-    ax[4].set_xlim(xrange)
-    ax[4].set_xlabel(r"$\lambda$ [$\mu$m]")
+    ax[3].set_xscale("log")
+    ax[3].set_xlim(xrange)
+    ax[3].set_xlabel(r"$\lambda$ [$\mu$m]")
 
     ax[0].set_yscale(yrange_a_type)
     ax[2].set_yscale(yrange_b_type)
-    ax[4].set_yscale(yrange_s_type)
+    # ax[4].set_yscale(yrange_s_type)
     ax[0].set_ylim(yrange_a)
     ax[2].set_ylim(yrange_b)
-    ax[4].set_ylim(yrange_s)
+    # ax[4].set_ylim(yrange_s)
     ax[0].set_ylabel("intercept (a)")
     ax[1].set_ylabel("a - fit")
     ax[2].set_ylabel("slope (b)")
     ax[3].set_ylabel("b - fit")
     # ax[4].set_ylabel(r"scatter ($\sigma$)")
-    ax[4].set_ylabel("c2 or ln(like_ratio)")
+    # ax[4].set_ylabel("c2 or ln(like_ratio)")
     # ax[3, 0].set_ylabel("scatter")
 
-    for i in range(5):
+    for i in range(4):
         ax[i].axhline(linestyle="--", alpha=0.25, color="k", linewidth=2)
 
     # ax[0].legend(ncol=2, loc=leg_loc, fontsize=0.8 * fontsize)
 
-    ax[4].xaxis.set_major_formatter(ScalarFormatter())
-    ax[4].xaxis.set_minor_formatter(ScalarFormatter())
-    ax[4].set_xticks(xticks, minor=True)
+    ax[3].xaxis.set_major_formatter(ScalarFormatter())
+    ax[3].xaxis.set_minor_formatter(ScalarFormatter())
+    ax[3].set_xticks(xticks, minor=True)
 
     if args.wavereg == "all":
         ax[0].yaxis.set_major_formatter(ScalarFormatter())
@@ -850,9 +852,9 @@ if __name__ == "__main__":
         ax[2].yaxis.set_major_formatter(ScalarFormatter())
         ax[2].yaxis.set_minor_formatter(ScalarFormatter())
         ax[2].set_yticks([-1.0, 1.0, 10.0], minor=True)
-        ax[4].yaxis.set_major_formatter(ScalarFormatter())
-        ax[4].yaxis.set_minor_formatter(ScalarFormatter())
-        ax[4].set_yticks([0.001, 0.01, 0.1, 1.0], minor=True)
+        # ax[4].yaxis.set_major_formatter(ScalarFormatter())
+        # ax[4].yaxis.set_minor_formatter(ScalarFormatter())
+        # ax[4].set_yticks([0.001, 0.01, 0.1, 1.0], minor=True)
     elif args.wavereg == "ir":
         ax[0].yaxis.set_major_formatter(ScalarFormatter())
         ax[0].yaxis.set_minor_formatter(ScalarFormatter())
