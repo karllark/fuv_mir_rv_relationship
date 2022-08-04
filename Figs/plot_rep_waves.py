@@ -279,7 +279,7 @@ if __name__ == "__main__":
                 "FUSE",
                 repwaves[rname],
                 psym_gor09,
-                "G09",
+                "GCC09",
             )
 
         if "STIS" in rname:
@@ -334,7 +334,7 @@ if __name__ == "__main__":
                 "IUE",
                 repwaves[rname],
                 psym_gor09,
-                "G09",
+                "GCC09",
             )
             xvals2, xvals2_unc, yvals2, yvals2_unc, avfrac2 = plot_exts(
                 exts_fit19,
@@ -398,7 +398,7 @@ if __name__ == "__main__":
             # )
             oexts = get_alav(exts_gor09, "BAND", repwaves[rname])
             ax[i].plot(
-                rvs_gor09[:, 0], oexts[:, 0], psym_gor09, fillstyle="none", label="G09"
+                rvs_gor09[:, 0], oexts[:, 0], psym_gor09, fillstyle="none", label="GCC09"
             )
             oexts = get_alav(exts_gor21, "BAND", repwaves[rname])
             ax[i].plot(

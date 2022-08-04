@@ -73,14 +73,14 @@ if __name__ == "__main__":
         g22mod = G22(Rv=rv)
         ax.plot(modx, g22mod(modx), color="black", lw=4, alpha=0.5, label="G22")
 
-        g22lfmod = G22LFnoweight(Rv=rv)
-        ax.plot(modx, g22lfmod(modx), color="magenta", alpha=0.5, linestyle="dotted", lw=2, label="G22LF")
-
-        g22mcmod = G22MC(Rv=rv)
-        ax.plot(modx, g22mcmod(modx), color="green", alpha=0.5, linestyle="dotted", lw=2, label="G22MC")
-
-        g22hfmod = G22HF(Rv=rv)
-        ax.plot(modx, g22hfmod(modx), color="blue", alpha=0.5, linestyle="dashed", lw=2, label="G22HF")
+        # g22lfmod = G22LFnoweight(Rv=rv)
+        # ax.plot(modx, g22lfmod(modx), color="magenta", alpha=0.5, linestyle="dotted", lw=2, label="G22LF")
+        #
+        # g22mcmod = G22MC(Rv=rv)
+        # ax.plot(modx, g22mcmod(modx), color="green", alpha=0.5, linestyle="dotted", lw=2, label="G22MC")
+        #
+        # g22hfmod = G22HF(Rv=rv)
+        # ax.plot(modx, g22hfmod(modx), color="blue", alpha=0.5, linestyle="dashed", lw=2, label="G22HF")
 
         ccm89mod = CCM89(Rv=rv)
         ax.plot(modx2, ccm89mod(modx2), linestyle="dashed", color="black", alpha=0.25, label="CCM89")

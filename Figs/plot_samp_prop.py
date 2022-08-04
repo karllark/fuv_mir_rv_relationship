@@ -19,16 +19,43 @@ def plot_props(ax, avs, rvs, psym, label):
     print("AV", np.min(avs[:, 0]), np.max(avs[:, 0]))
     print("RV", np.min(rvs[:, 0]), np.max(rvs[:, 0]))
     yerr = (1 / rvs[:, 0]) * (rvs[:, 1] / rvs[:, 0])
-    ax.errorbar(
-        1 / rvs[:, 0] - 1 / 3.1,
-        avs[:, 0],
-        xerr=avs[:, 1],
-        yerr=yerr,
-        fmt=psym,
-        fillstyle="none",
-        label=label,
-        alpha=0.2,
-    )
+    # ax.errorbar(
+    #     1 / rvs[:, 0] - 1 / 3.1,
+    #     avs[:, 0],
+    #     xerr=avs[:, 1],
+    #     yerr=yerr,
+    #     fmt=psym,
+    #     fillstyle="none",
+    #     label=label,
+    #     alpha=0.2,
+    # )
+
+
+def hname(tname):
+    """
+    Make all the star names have the right number of 0 characters
+    """
+    nname = tname
+    if tname[0:2] == "hd":
+        num = tname.split("hd")[1]
+        if len(num) == 6:
+            nname = tname
+        elif len(num) == 5:
+            nname = f"hd0{num}"
+        elif len(num) == 4:
+            nname = f"hd00{num}"
+        elif len(num) == 3:
+            nname = f"hd000{num}"
+        elif len(num) == 2:
+            nname = f"hd0000{num}"
+        else:
+            print(tname)
+            print("hname error")
+            exit()
+    else:
+        nname = tname
+
+    return nname
 
 
 def check_overlap(samp1, samp2):
@@ -75,7 +102,7 @@ if __name__ == "__main__":
     rvs_gor09 = np.zeros((n_gor09, 2))
     avs_gor09 = np.zeros((n_gor09, 2))
     for i, iext in enumerate(exts_gor09):
-        names_gor09.append(files_gor09[i].split("_")[1])
+        names_gor09.append(files_gor09[i].split("_")[1].lower())
 
         av = iext.columns["AV"]
         avs_gor09[i, 0] = av[0]
@@ -103,7 +130,7 @@ if __name__ == "__main__":
     rvs_fit19 = np.zeros((n_fit19, 2))
     avs_fit19 = np.zeros((n_fit19, 2))
     for i, iext in enumerate(exts_fit19):
-        names_fit19.append(files_fit19[i].split("_")[1])
+        names_fit19.append(hname(files_fit19[i].split("_")[1].lower()))
 
         av = iext.columns["AV"]
         avs_fit19[i, 0] = av[0]
@@ -119,7 +146,7 @@ if __name__ == "__main__":
     rvs_gor21 = np.zeros((n_gor21, 2))
     avs_gor21 = np.zeros((n_gor21, 2))
     for i, iext in enumerate(exts_gor21):
-        names_gor21.append(files_gor21[i].split("_")[1])
+        names_gor21.append(files_gor21[i].split("_")[1].lower())
 
         av = iext.columns["AV"]
         avs_gor21[i, 0] = av[0]
@@ -158,7 +185,7 @@ if __name__ == "__main__":
 
     fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(6, 5.5))
 
-    all_tags = ["G09", "F19", "G21", "D22"]
+    all_tags = ["GCC09", "F19", "G21", "D22"]
     all_names = [names_gor09, names_fit19, names_gor21, names_dec22]
 
     plot_props(ax, avs_gor09, rvs_gor09, psym_gor09, "G09")

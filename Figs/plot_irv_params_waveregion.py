@@ -371,7 +371,7 @@ if __name__ == "__main__":
     leg_loc = "lower left"
     if args.wavereg == "uv":
         leg_loc = "upper right"
-        labels = ["G09", "All", "F19"]
+        labels = ["GCC09", "All", "F19"]
         label_colors = [gor09_color, aiue_color, fit19_color]
         label_xpos = [0.105, 0.2, 0.315]
         label_ypos = 7.0
@@ -386,7 +386,7 @@ if __name__ == "__main__":
                 fontsize=0.8 * fontsize,
             )
 
-        gor09_res1 = plot_irv_ssamp(ax, gor09_fuse, "G09", color=gor09_color)
+        gor09_res1 = plot_irv_ssamp(ax, gor09_fuse, "GCC09", color=gor09_color)
         alliue_res = plot_irv_ssamp(ax, aiue_iue, "All", color=aiue_color, inst="IUE")
         fit19_res = plot_irv_ssamp(
             ax, fit19_stis, "F19", color=fit19_color, inst="STIS"
@@ -703,7 +703,7 @@ if __name__ == "__main__":
 
     else:
         leg_loc = "upper center"
-        labels = ["G09", "All", "F19", "D22", "G21"]
+        labels = ["GCC09", "All", "F19", "D22", "G21"]
         label_colors = [gor09_color, aiue_color, fit19_color, dec22_color, gor21_color]
         label_xpos = [0.105, 0.2, 0.5, 2.0, 12.0]
         label_ypos = 10.0
@@ -718,7 +718,7 @@ if __name__ == "__main__":
                 fontsize=0.8 * fontsize,
             )
 
-        gor09_res1 = plot_irv_ssamp(ax, gor09_fuse, "G09", color=gor09_color)
+        gor09_res1 = plot_irv_ssamp(ax, gor09_fuse, "GCC09", color=gor09_color)
         alliue_res = plot_irv_ssamp(ax, aiue_iue, "All", color=aiue_color, inst="IUE")
         fit19_res = plot_irv_ssamp(
             ax, fit19_stis, "F19", color=fit19_color, inst="STIS"
@@ -844,6 +844,8 @@ if __name__ == "__main__":
     ax[3].xaxis.set_major_formatter(ScalarFormatter())
     ax[3].xaxis.set_minor_formatter(ScalarFormatter())
     ax[3].set_xticks(xticks, minor=True)
+
+    ax[3].tick_params(axis='x', which='minor', labelsize=fontsize*.8)
 
     if args.wavereg == "all":
         ax[0].yaxis.set_major_formatter(ScalarFormatter())
