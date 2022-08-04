@@ -209,7 +209,7 @@ def fit_allwaves(
                 intinfo = [-0.20, 0.20, 0.0001]
 
                 if do_2dfit_emcee:
-                    nsteps = 100
+                    nsteps = 1000
                     fit2d_line = fit_2Dcorrelated_emcee(
                         xvals[gvals],
                         yvals[gvals],
@@ -220,7 +220,9 @@ def fit_allwaves(
                     )
                     # bparams = get_best_fit_params(fit2d_line.sampler)
 
-                    samples = fit2d_line.sampler.get_chain(flat=True, discard=int(0.1 * nsteps))
+                    samples = fit2d_line.sampler.get_chain(
+                        flat=True, discard=int(0.1 * nsteps)
+                    )
 
                     d2slopes[k] = np.mean(samples[:, 0])
                     d2slopes_unc[k] = np.std(samples[:, 0])
@@ -399,24 +401,49 @@ if __name__ == "__main__":
 
     if args.dataset == "G09":
         exts_gor09 = get_exts("gor09")
-        fit_allwaves(exts_gor09, "FUSE", "gor09_fuse_irv_params.fits", hfemcee=hfemcee)
+        fit_allwaves(
+            exts_gor09,
+            "FUSE",
+            "gor09_fuse_irv_params.fits",
+            hfemcee=hfemcee,
+            do_2dfit_emcee=do_2dfit_emcee,
+        )
         # fit_allwaves(exts_gor09, "IUE", "gor09_iue_irv_params.fits", hfemcee=hfemcee)
     elif args.dataset == "F19":
         exts_fit19 = get_exts("fit19")
-        fit_allwaves(exts_fit19, "STIS", "fit19_stis_irv_params.fits", hfemcee=hfemcee)
+        fit_allwaves(
+            exts_fit19,
+            "STIS",
+            "fit19_stis_irv_params.fits",
+            hfemcee=hfemcee,
+            do_2dfit_emcee=do_2dfit_emcee,
+        )
     elif args.dataset == "G21":
         exts_gor21 = get_exts("gor21")
         # fit_allwaves(exts_gor21, "IUE", "gor21_iue_irv_params.fits", hfemcee=hfemcee)
-        fit_allwaves(exts_gor21, "IRS", "gor21_irs_irv_params.fits",
-                     hfemcee=hfemcee, do_2dfit_emcee=do_2dfit_emcee)
+        fit_allwaves(
+            exts_gor21,
+            "IRS",
+            "gor21_irs_irv_params.fits",
+            hfemcee=hfemcee,
+            do_2dfit_emcee=do_2dfit_emcee,
+        )
     elif args.dataset == "D22":
         exts_dec22 = get_exts("dec22")
         # fit_allwaves(exts_dec22, "IUE", "dec22_iue_irv_params.fits", hfemcee=hfemcee)
         fit_allwaves(
-            exts_dec22, "SpeX_SXD", "dec22_spexsxd_irv_params.fits", hfemcee=hfemcee
+            exts_dec22,
+            "SpeX_SXD",
+            "dec22_spexsxd_irv_params.fits",
+            hfemcee=hfemcee,
+            do_2dfit_emcee=do_2dfit_emcee,
         )
         fit_allwaves(
-            exts_dec22, "SpeX_LXD", "dec22_spexlxd_irv_params.fits", hfemcee=hfemcee
+            exts_dec22,
+            "SpeX_LXD",
+            "dec22_spexlxd_irv_params.fits",
+            hfemcee=hfemcee,
+            do_2dfit_emcee=do_2dfit_emcee,
         )
     elif args.dataset == "AIUE":
         exts_gor09 = get_exts("gor09")
