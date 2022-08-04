@@ -46,11 +46,12 @@ Figures
 
 3. Fit parameters versus 1/R(V) in the UV: python Figs/plot_irv_params_waveregion.py --wavereg=uv
 
-4. Fit parameters versus 1/R(V) in the UV: python Figs/plot_irv_params_waveregion.py --wavereg=opt
+4. Fit parameters versus 1/R(V) in the optical: python Figs/plot_irv_params_waveregion.py --wavereg=opt
 
-5. Fit parameters versus 1/R(V) in the UV: python Figs/plot_irv_params_waveregion.py --wavereg=ir
+5. Fit parameters versus 1/R(V) in the IR: python Figs/plot_irv_params_waveregion.py --wavereg=ir
 
-?. Fit parameters versus 1/R(V): python Figs/plot_irv_params.py
+6. Fit parameters versus 1/R(V) from UV to IR: python Figs/plot_irv_params_waveregion.py --wavereg=all
+
 
 
 Tables
