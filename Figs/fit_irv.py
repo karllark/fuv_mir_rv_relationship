@@ -12,7 +12,7 @@ from hyperfit.linfit import LinFit as HFLinFit
 from measure_extinction.extdata import ExtData
 
 from helpers import mcfit_cov
-from fit_full2dcor import fit_2Dcorrelated  # , fit_2Dcorrelated_emcee
+from fit_full2dcor import fit_2Dcorrelated, fit_2Dcorrelated_emcee
 
 
 def get_alav(exts, src, wave):
@@ -126,9 +126,9 @@ def fit_allwaves(
     rmss = np.zeros(nwaves)
 
     d2slopes = np.zeros((nwaves))
-    # d2slopes_unc = np.zeros((nwaves))
+    d2slopes_unc = np.zeros((nwaves))
     d2intercepts = np.zeros((nwaves))
-    # d2intercepts_unc = np.zeros((nwaves))
+    d2intercepts_unc = np.zeros((nwaves))
     d2rmss = np.zeros((nwaves))
     d2lnlikes = np.zeros((nwaves))
     d2curves_quad = np.zeros((nwaves))
@@ -208,39 +208,41 @@ def fit_allwaves(
                 # fit with new full 2D fitting (use unweigthed linear fit to start)
                 intinfo = [-0.20, 0.20, 0.0001]
 
-                # if do_2dfit_emcee:
-                #     nsteps = 1000
-                #     fit2d_line = fit_2Dcorrelated_emcee(
-                #         xvals[gvals],
-                #         yvals[gvals],
-                #         covs,
-                #         fitted_line,
-                #         intinfo,
-                #         nsteps=nsteps,
-                #     )
-                #     bparams = get_best_fit_params(fit2d_line.sampler)
-                #
-                #     samples = fit2d_line.sampler.get_chain(flat=True, discard=0.1 * nsteps)
-                #
-                #     d2slopes[k] = np.mean(samples[:, 1])
-                #     d2slopes_unc[k] = np.std(samples[:, 1])
-                #     d2intercepts[k] = np.mean(samples[:, 0])
-                #     d2intercepts_unc[k] = np.std(samples[:, 0])
-                #
-                #     d2lnlikes[k] = -1.0 * fit2d_line.result["fun"]
-                #
-                #     exit()
-                # else:
-                fit2d_line = fit_2Dcorrelated(
-                    xvals[gvals], yvals[gvals], covs, fitted_line, intinfo
-                )
-                d2slopes[k] = fit2d_line.slope.value
-                d2intercepts[k] = fit2d_line.intercept.value
-                d2rmss[k] = np.sqrt(
-                    np.sum(np.square(yvals[gvals] - fit2d_line(xvals[gvals])))
-                    / (npts[k] - 1)
-                )
-                d2lnlikes[k] = -1.0 * fit2d_line.result["fun"]
+                if do_2dfit_emcee:
+                    nsteps = 100
+                    fit2d_line = fit_2Dcorrelated_emcee(
+                        xvals[gvals],
+                        yvals[gvals],
+                        covs,
+                        fitted_line,
+                        intinfo,
+                        nsteps=nsteps,
+                    )
+                    # bparams = get_best_fit_params(fit2d_line.sampler)
+
+                    samples = fit2d_line.sampler.get_chain(flat=True, discard=int(0.1 * nsteps))
+
+                    d2slopes[k] = np.mean(samples[:, 0])
+                    d2slopes_unc[k] = np.std(samples[:, 0])
+                    d2intercepts[k] = np.mean(samples[:, 1])
+                    d2intercepts_unc[k] = np.std(samples[:, 1])
+
+                    # print(intercepts[k], d2intercepts[k], d2intercepts_unc[k])
+                    # print(slopes[k], d2slopes[k], d2slopes_unc[k])
+                    # exit()
+
+                    # d2lnlikes[k] = -1.0 * fit2d_line.result["fun"]
+                else:
+                    fit2d_line = fit_2Dcorrelated(
+                        xvals[gvals], yvals[gvals], covs, fitted_line, intinfo
+                    )
+                    d2slopes[k] = fit2d_line.slope.value
+                    d2intercepts[k] = fit2d_line.intercept.value
+                    d2rmss[k] = np.sqrt(
+                        np.sum(np.square(yvals[gvals] - fit2d_line(xvals[gvals])))
+                        / (npts[k] - 1)
+                    )
+                    d2lnlikes[k] = -1.0 * fit2d_line.result["fun"]
 
                 # initial unweighted quadratic fit
                 quad_init = models.Polynomial1D(2)
@@ -337,6 +339,8 @@ def fit_allwaves(
     if do_2dfit:
         otab["d2slopes"] = d2slopes
         otab["d2intercepts"] = d2intercepts
+        otab["d2slopes_std"] = d2slopes_unc
+        otab["d2intercepts_std"] = d2intercepts_unc
         otab["d2rmss"] = d2rmss
         otab["d2lnlikes"] = d2lnlikes
         otab["d2curves_quad"] = d2curves_quad
@@ -391,6 +395,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     hfemcee = False
+    do_2dfit_emcee = True
 
     if args.dataset == "G09":
         exts_gor09 = get_exts("gor09")
@@ -402,7 +407,8 @@ if __name__ == "__main__":
     elif args.dataset == "G21":
         exts_gor21 = get_exts("gor21")
         # fit_allwaves(exts_gor21, "IUE", "gor21_iue_irv_params.fits", hfemcee=hfemcee)
-        fit_allwaves(exts_gor21, "IRS", "gor21_irs_irv_params.fits", hfemcee=hfemcee)
+        fit_allwaves(exts_gor21, "IRS", "gor21_irs_irv_params.fits",
+                     hfemcee=hfemcee, do_2dfit_emcee=do_2dfit_emcee)
     elif args.dataset == "D22":
         exts_dec22 = get_exts("dec22")
         # fit_allwaves(exts_dec22, "IUE", "dec22_iue_irv_params.fits", hfemcee=hfemcee)

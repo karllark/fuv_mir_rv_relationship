@@ -23,6 +23,7 @@ from fit_irv import get_irvs, get_alav, get_best_fit_params
 from helpers import mcfit_cov, mcfit_cov_quad
 
 from fit_full2dcor import fit_2Dcorrelated, fit_2Dcorrelated_emcee
+from fit_full2dcor import fit_2Dcorrelated_fast
 
 
 def plot_exts(exts, rvs, avs, ctype, cwave, psym, label, alpha=0.5):
@@ -259,6 +260,7 @@ if __name__ == "__main__":
         "SpeX_SXD1": 1.65 * u.micron,
         "SpeX_LXD1": 3.5 * u.micron,
         "IRS1": 10.0 * u.micron,
+        # "IRS1": 6.0 * u.micron,
         "IRS2": 15.0 * u.micron,
     }
 
@@ -494,36 +496,43 @@ if __name__ == "__main__":
 
             # fit with new full 2D fitting
             intinfo = [-0.20, 0.20, 0.001]
-            fit2d_line = fit_2Dcorrelated(
+            # fit2d_line = fit_2Dcorrelated(
+            #     xvals[gvals], yvals[gvals], covs, fitted_line, intinfo
+            # )
+            # print(fit2d_line.result["fun"], fit2d_line.slope)
+            fit2d_line = fit_2Dcorrelated_fast(
                 xvals[gvals], yvals[gvals], covs, fitted_line, intinfo
             )
             print(fit2d_line.result["fun"])
 
             ax[i].plot(mod_xvals, fit2d_line(mod_xvals), "k-", alpha=0.75, lw=3)
 
-            # nsteps = 100
-            # fit2d_line = fit_2Dcorrelated_emcee(
-            #     xvals[gvals],
-            #     yvals[gvals],
-            #     covs,
-            #     fit2d_line,
-            #     intinfo,
-            #     nsteps=nsteps,
-            # )
-            # bparams = get_best_fit_params(fit2d_line.sampler)
-            # print(bparams)
-            #
-            # samples = fit2d_line.sampler.get_chain(flat=True, discard=int(0.1 * nsteps))
-            #
-            # d2slopes = np.mean(samples[:, 1])
-            # d2slopes_unc = np.std(samples[:, 1])
-            # d2intercepts = np.mean(samples[:, 0])
-            # d2intercepts_unc = np.std(samples[:, 0])
-            # print(d2slopes, d2intercepts)
-            # print(d2slopes_unc, d2intercepts_unc)
-            #
-            # fit2d_line.slope = d2slopes
-            # fit2d_line.intercept = d2intercepts
+            nsteps = 1000
+            fit2d_line = fit_2Dcorrelated_emcee(
+                xvals[gvals],
+                yvals[gvals],
+                covs,
+                fit2d_line,
+                intinfo,
+                nsteps=nsteps,
+                progress=True,
+            )
+            bparams = get_best_fit_params(fit2d_line.sampler)
+            print(bparams)
+
+            samples = fit2d_line.sampler.get_chain(flat=True, discard=int(0.1 * nsteps))
+
+            d2slopes = np.mean(samples[:, 1])
+            d2slopes_unc = np.std(samples[:, 1])
+            d2intercepts = np.mean(samples[:, 0])
+            d2intercepts_unc = np.std(samples[:, 0])
+            print(d2slopes, d2intercepts)
+            print(d2slopes_unc, d2intercepts_unc)
+
+            fit2d_line.slope = d2slopes
+            fit2d_line.intercept = d2intercepts
+
+            exit()
 
             if do_quad:
                 fit2d_quad = fit_2Dcorrelated(

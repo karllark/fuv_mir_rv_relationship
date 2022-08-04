@@ -23,7 +23,7 @@ def lnlike_correlated(params, measured_vals, updated_model, cov, intinfo, x):
     measured_vals : ndarray of length N
         Measured data values.
     updated_model : `~astropy.modeling.Model`
-        Model with parameters set by the current iteration of the optimizer.
+        Model with parameters set by the current iteration of the solver.
     cov : ndarray (N, 2, 2)
         2x2 covariance matrices for each (x, y) data points
     intinfo : 3 element array
@@ -57,6 +57,53 @@ def lnlike_correlated(params, measured_vals, updated_model, cov, intinfo, x):
     return lineintegral
 
 
+def lnlike_correlated_fast(params, datamod, updated_model, intinfo):
+    """
+    Compute the natural log of the likelihood that a model fits
+    (x, y) data points that have correlated uncertainties given
+    in the covariance matrix.  This is done by computing the line
+    integral along the model evaluating the likelihood each x,y data
+    point matches the model thereby getting the total likelihood
+    that the data is from that model.  Should be the full solution unlike
+    fitting assuming only y uncs or fitting with the orthogonal distance
+    regression (ODR).
+
+    Parameters
+    ----------
+    datamod : list
+        Multivariate normal/Gaussian models for each data point
+    updated_model : `~astropy.modeling.Model`
+        Model with parameters set by the current iteration of the solver.
+    cov : ndarray (N, 2, 2)
+        2x2 covariance matrices for each (x, y) data points
+    intinfo : 3 element array
+        line integration info with (x min, x max, x delta) values
+    """
+    updated_model.parameters = params
+
+    modx = np.arange(intinfo[0], intinfo[1], intinfo[2])
+    mody = updated_model(modx)
+    pos = np.column_stack((modx, mody))
+    # determine the linear distance between adjacent model points
+    #    needed for line integral
+    lindist = np.sqrt(np.square(modx[1:] - modx[:-1]) + np.square(mody[1:] - mody[:-1]))
+    # total distance - needed for normalizing line integral
+    totlength = np.sum(lindist)
+    lineintegral = 0.0
+    for cdatamod in datamod:
+        # evalute the data at the model (x,y) points
+        modvals = cdatamod.pdf(pos)
+        modaves = modvals[1:] + modvals[:-1]
+        # integrate
+        tintegral = np.sum(modaves * lindist)
+        if tintegral != 0.0:
+            lineintegral += np.log(tintegral / totlength)
+    if lineintegral == 0.0 or not np.isfinite(lineintegral):
+        lineintegral = -1e20
+
+    return lineintegral
+
+
 def fit_2Dcorrelated(x, y, covs, fit_model, intinfo):
     """
     Do standard optimization fitting with correlated lnlike function.
@@ -75,18 +122,44 @@ def fit_2Dcorrelated(x, y, covs, fit_model, intinfo):
     return fit_model
 
 
-def fit_2Dcorrelated_emcee(x, y, covs, fit_model, intinfo, nsteps=100):
+def fit_2Dcorrelated_fast(x, y, covs, fit_model, intinfo):
+    """
+    Do standard optimization fitting with correlated lnlike function.
+    """
+
+    datamod = []
+    for k in range(len(x)):
+        datamod.append(multivariate_normal([x[k], y[k]], covs[k, :, :]))
+
+    def nll(*args):
+        return -lnlike_correlated_fast(*args)
+
+    params = fit_model.parameters
+    # print("start:", params)
+    result = op.minimize(nll, params, args=(datamod, fit_model, intinfo))
+
+    fit_model.parameters = result["x"]
+    fit_model.result = result
+    # print("end:", fit_model.parameters)
+    return fit_model
+
+
+def fit_2Dcorrelated_emcee(x, y, covs, fit_model, intinfo, nsteps=100, progress=False):
     """
     Do emcee based sampling with correlated lnlike function.
     """
+    datamod = []
+    for k in range(len(x)):
+        datamod.append(multivariate_normal([x[k], y[k]], covs[k, :, :]))
+
     ndim = len(fit_model.parameters)
     nwalkers = 2 * ndim
-    pos = fit_model.parameters + 1e-4 * np.random.randn(nwalkers, ndim)
+    pos = fit_model.parameters + 1e-3 * np.random.randn(nwalkers, ndim)
 
     sampler = emcee.EnsembleSampler(
-        nwalkers, ndim, lnlike_correlated, args=(y, fit_model, covs, intinfo, x)
+        nwalkers, ndim, lnlike_correlated_fast, args=(datamod, fit_model, intinfo)
     )
-    sampler.run_mcmc(pos, nsteps, progress=True)
+    sampler.run_mcmc(pos, nsteps, progress=progress)
 
     fit_model.sampler = sampler
 

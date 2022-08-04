@@ -76,8 +76,10 @@ def plot_irv_ssamp(
     if "d2slopes" in itab.colnames:
         itab["d2slopes"][bvals] = np.NAN
         itab["d2intercepts"][bvals] = np.NAN
-        itab["d2slopes_std"] = itab["d2slopes"] * 0.1
-        itab["d2intercepts_std"] = itab["d2intercepts"] * 0.1
+
+        if "d2slopes_std" not in itab.colnames:
+            itab["d2slopes_std"] = itab["d2slopes"] * 0.0
+            itab["d2intercepts_std"] = itab["d2intercepts"] * 0.0
         for k, cname in enumerate(["d2intercepts", "d2slopes"]):
             ax[k * 2].plot(
                 itab["waves"][gvals],
@@ -87,13 +89,14 @@ def plot_irv_ssamp(
                 label=label,
                 alpha=0.75,
             )
-            # ax[k * 2].fill_between(
-            #     itab["waves"][gvals].value,
-            #     itab[cname][gvals] - itab[f"{cname}_std"],
-            #     itab[cname][gvals] + itab[f"{cname}_std"],
-            #     color=color,
-            #     alpha=0.25,
-            # )
+
+            ax[k * 2].fill_between(
+                itab["waves"][gvals].value,
+                itab[cname][gvals] - itab[f"{cname}_std"],
+                itab[cname][gvals] + itab[f"{cname}_std"],
+                color=color,
+                alpha=0.25,
+            )
 
         # cubic fits
         # itab["d2curves_quad"][bvals] = np.NAN
