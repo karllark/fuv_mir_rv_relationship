@@ -54,8 +54,4 @@ Figures
 
 7. Comparison of R(V) relationship to previous work: python Figs/plot_select_rv.py
 
-
-Tables
-------
-
-1.
+8. Example deviate curves: python Figs/plot_deviate_curves.py
