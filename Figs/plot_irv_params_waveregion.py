@@ -206,8 +206,16 @@ def plot_resid(ax, data, dindx, model, color):
         data[1][gvals],
         # (data[dindx][gvals] - model(fitx)) / model(fitx),
         data[dindx][gvals] - model(fitx),
+        linestyle="dotted",
         color=color,
         alpha=0.75,
+    )
+    ax.fill_between(
+        data[1][gvals].value,
+        data[dindx][gvals].value - model(fitx) - data[dindx + 2][gvals].value,
+        data[dindx][gvals].value - model(fitx) + data[dindx + 2][gvals].value,
+        color=color,
+        alpha=0.25,
     )
 
 
@@ -520,7 +528,7 @@ if __name__ == "__main__":
             [g22opt, g22opt],
             datasets,
             colors,
-            wrange=[0.30, 1.1] * u.micron,
+            wrange=[0.30, 1.2] * u.micron,
             no_weights=True,
         )
         ax[1].set_ylim(-0.03, 0.1)
@@ -602,7 +610,7 @@ if __name__ == "__main__":
             inst="SpeXLXD",
         )
         gor21_res = plot_irv_ssamp(ax, gor21_irs, "G21", color=gor21_color)
-        xrange = [1.0, 35.0]
+        xrange = [0.9, 35.0]
         yrange_a_type = "log"
         yrange_a = [0.01, 1.3]
         yrange_b = [-1.5, 0.5]
@@ -627,6 +635,21 @@ if __name__ == "__main__":
         g21mod.sil2_fwhm = 17.0
         g21mod.sil2_fwhm.fixed = True
 
+        # irpow2 = G21mod()
+        # irpow2.scale = -1.0
+        # irpow2.scale.bounds = [-2.0, 0.0]
+        # irpow2.alpha = -1.1
+        # irpow2.alpha.bounds = [-2.0, -0.5]
+        # irpow2.alpha2 = -0.7
+        # irpow2.alpha2.bounds = [-2.0, -0.5]
+        # irpow2.swave.bounds = [2.0, 8.0]
+        # irpow2.swidth = 5.0
+        # irpow2.swidth.bounds = [1.0, 20.0]
+        # irpow2.sil1_amp = 0.0
+        # irpow2.sil1_amp.fixed = True
+        # irpow2.sil2_amp = 0.0
+        # irpow2.sil2_amp.fixed = True
+
         # irpow = G22pow()
         # irpow = Polynomial1D(6)
         # irpow = Legendre1D(6)
@@ -642,7 +665,7 @@ if __name__ == "__main__":
             [g21mod, irpow],
             datasets,
             colors,
-            wrange=[1.0, 40.0] * u.micron,
+            wrange=[0.9, 40.0] * u.micron,
             no_weights=True,
         )
         ax[1].set_ylim(-0.015, 0.015)
@@ -781,23 +804,35 @@ if __name__ == "__main__":
             gor21_color,
         ]
 
-        # (data[dindx][gvals] - model(fitx)) / model(fitx),
-
         for cdata, ccolor in zip(datasets, colors):
             cmodelfit = g22mod(cdata[1])
             ax[1].plot(
                 cdata[1],
-                # (cdata[2] - g22mod.a) / g22mod.a,
                 cdata[2] - g22mod.a,
+                linestyle="dotted",
                 color=ccolor,
                 alpha=0.75,
             )
             ax[3].plot(
                 cdata[1],
-                # (cdata[3] - g22mod.b) / g22mod.b,
                 cdata[3] - g22mod.b,
+                linestyle="dotted",
                 color=ccolor,
                 alpha=0.75,
+            )
+            ax[1].fill_between(
+                cdata[1].value,
+                cdata[2].value - g22mod.a - cdata[4].value,
+                cdata[2].value - g22mod.a + cdata[4].value,
+                color=ccolor,
+                alpha=0.25,
+            )
+            ax[3].fill_between(
+                cdata[1].value,
+                cdata[3].value - g22mod.b - cdata[5].value,
+                cdata[3].value - g22mod.b + cdata[5].value,
+                color=ccolor,
+                alpha=0.25,
             )
         ax[1].set_ylim(-0.05, 0.05)
         ax[3].set_ylim(-1.0, 1.0)
@@ -848,7 +883,7 @@ if __name__ == "__main__":
     ax[3].xaxis.set_minor_formatter(ScalarFormatter())
     ax[3].set_xticks(xticks, minor=True)
 
-    ax[3].tick_params(axis='x', which='minor', labelsize=fontsize*.8)
+    ax[3].tick_params(axis="x", which="minor", labelsize=fontsize * 0.8)
 
     if args.wavereg == "all":
         ax[0].yaxis.set_major_formatter(ScalarFormatter())
