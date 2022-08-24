@@ -76,7 +76,7 @@ if __name__ == "__main__":
         ax.plot(
             modx3,
             d22mod(modx3),
-            linestyle=(0, (5, 7)),
+            linestyle=(0, (3, 1, 1, 1, 1, 1)),
             color=ccol,
             alpha=0.5,
             label=ltxt[3],
