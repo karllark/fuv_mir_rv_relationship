@@ -470,6 +470,20 @@ if __name__ == "__main__":
         tmodel.C4 = 0.0
         ax[0].plot(modx, tmodel(modx), "k:")
 
+        # slope
+        tmodel = copy.deepcopy(fitted_models[1])
+        tmodel.C3 = 0.0
+        tmodel.C4 = 0.0
+        ax[2].plot(modx, tmodel(modx), "k--")
+
+        tmodel = copy.deepcopy(fitted_models[1])
+        tmodel.C3 = 0.0
+        ax[2].plot(modx, tmodel(modx), "k:")
+
+        tmodel = copy.deepcopy(fitted_models[1])
+        tmodel.C4 = 0.0
+        ax[2].plot(modx, tmodel(modx), "k:")
+
     elif args.wavereg == "opt":
         leg_loc = "upper right"
         labels = ["F19", "D22"]
