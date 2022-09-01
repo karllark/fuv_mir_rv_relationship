@@ -81,7 +81,7 @@ class G22(BaseExtRvModel):
         plt.show()
     """
 
-    Rv_range = [2.0, 6.0]
+    Rv_range = [2.3, 5.6]
     x_range = x_range_G22
 
     def evaluate(self, in_x, Rv):

@@ -110,6 +110,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--incval04", help="include Valencic et al. 2004", action="store_true"
     )
+    parser.add_argument("--curve", help="UV only with quad", action="store_true")
     # parser.add_argument("--elvebv", help="plot versus E(l-V)/E(B-V)", action="store_true")
     parser.add_argument("--png", help="save figure as a png file", action="store_true")
     parser.add_argument("--pdf", help="save figure as a pdf file", action="store_true")
@@ -239,30 +240,52 @@ if __name__ == "__main__":
     plt.rc("xtick.major", width=2)
     plt.rc("ytick.major", width=2)
 
-    fig, fax = plt.subplots(
-        nrows=3,
-        ncols=3,
-        figsize=(12, 12),
-        sharex=True,  # constrained_layout=True
-    )
-    ax = fax.flatten()
+    do_hfit = False
+    do_mcfit = False
+    do_quad = False
 
-    repwaves = {
-        "FUSE1": 0.1 * u.micron,
-        # "FUSE1": 0.09042863547801971 * u.micron,
-        "IUE1": 0.15 * u.micron,
-        "IUE2": 0.2175 * u.micron,
-        # "IUE3": 0.3 * u.micron,
-        "STIS1": 0.45 * u.micron,
-        "STIS2": 0.7 * u.micron,
-        # "BAND1": 0.45 * u.micron,
-        # "BAND2": 2.1 * u.micron,
-        "SpeX_SXD1": 1.65 * u.micron,
-        "SpeX_LXD1": 3.5 * u.micron,
-        "IRS1": 10.0 * u.micron,
-        # "IRS1": 6.0 * u.micron,
-        "IRS2": 15.0 * u.micron,
-    }
+    nsteps = 1000
+
+    if args.curve:
+        fig, fax = plt.subplots(
+            nrows=1,
+            ncols=2,
+            figsize=(12, 6),
+            sharex=True,  # constrained_layout=True
+        )
+
+        repwaves = {
+            "FUSE1": 0.1 * u.micron,
+            "IUE1": 0.2175 * u.micron,
+        }
+        nsteps = 10
+        do_quad = True
+    else:
+        fig, fax = plt.subplots(
+            nrows=3,
+            ncols=3,
+            figsize=(12, 12),
+            sharex=True,  # constrained_layout=True
+        )
+
+        repwaves = {
+            "FUSE1": 0.1 * u.micron,
+            # "FUSE1": 0.09042863547801971 * u.micron,
+            "IUE1": 0.15 * u.micron,
+            "IUE2": 0.2175 * u.micron,
+            # "IUE3": 0.3 * u.micron,
+            "STIS1": 0.45 * u.micron,
+            "STIS2": 0.7 * u.micron,
+            # "BAND1": 0.45 * u.micron,
+            # "BAND2": 2.1 * u.micron,
+            "SpeX_SXD1": 1.65 * u.micron,
+            "SpeX_LXD1": 3.5 * u.micron,
+            "IRS1": 10.0 * u.micron,
+            # "IRS1": 6.0 * u.micron,
+            "IRS2": 15.0 * u.micron,
+        }
+
+    ax = fax.flatten()
 
     for i, rname in enumerate(repwaves.keys()):
         xvals = None
@@ -400,7 +423,11 @@ if __name__ == "__main__":
             # )
             oexts = get_alav(exts_gor09, "BAND", repwaves[rname])
             ax[i].plot(
-                rvs_gor09[:, 0], oexts[:, 0], psym_gor09, fillstyle="none", label="GCC09"
+                rvs_gor09[:, 0],
+                oexts[:, 0],
+                psym_gor09,
+                fillstyle="none",
+                label="GCC09",
             )
             oexts = get_alav(exts_gor21, "BAND", repwaves[rname])
             ax[i].plot(
@@ -426,10 +453,6 @@ if __name__ == "__main__":
         )
 
         # xvals = None
-
-        do_hfit = False
-        do_mcfit = False
-        do_quad = False
 
         # fit a line
         if xvals is not None:
@@ -507,7 +530,6 @@ if __name__ == "__main__":
 
             ax[i].plot(mod_xvals, fit2d_line(mod_xvals), "k-", alpha=0.75, lw=3)
 
-            nsteps = 1000
             fit2d_line = fit_2Dcorrelated_emcee(
                 xvals[gvals],
                 yvals[gvals],
@@ -531,8 +553,6 @@ if __name__ == "__main__":
 
             fit2d_line.slope = d2slopes
             fit2d_line.intercept = d2intercepts
-
-            exit()
 
             if do_quad:
                 fit2d_quad = fit_2Dcorrelated(
@@ -646,26 +666,41 @@ if __name__ == "__main__":
                 #     ax[i], xvals_good, yvals_good, covs_good, sigmas=sigmas, alpha=0.15
                 # )
 
-    fax[0, 1].set_xlim(xrange)
+    ax[0].set_xlim(xrange)
 
     # for 2nd x-axis with R(V) values
     axis_rvs = np.array([2.3, 2.5, 3.0, 4.0, 5.0, 6.0])
     new_ticks = 1 / axis_rvs - 1 / 3.1
     new_ticks_labels = ["%.1f" % z for z in axis_rvs]
 
-    for i in range(3):
-        fax[2, i].set_xlabel(labx)
+    if args.curve:
+        for i in range(2):
+            ax[i].set_xlabel(labx)
 
-        if not args.rv:
-            # add 2nd x-axis with R(V) values
-            tax = fax[0, i].twiny()
-            tax.set_xlim(fax[0, i].get_xlim())
-            tax.set_xticks(new_ticks)
-            tax.set_xticklabels(new_ticks_labels)
-            tax.set_xlabel(r"$R(V)$")
+            if not args.rv:
+                # add 2nd x-axis with R(V) values
+                tax = fax[i].twiny()
+                tax.set_xlim(fax[i].get_xlim())
+                tax.set_xticks(new_ticks)
+                tax.set_xticklabels(new_ticks_labels)
+                tax.set_xlabel(r"$R(V)$")
 
-    for i in range(3):
-        fax[i, 0].set_ylabel(laby)
+        for i in range(3):
+            ax[0].set_ylabel(laby)
+    else:
+        for i in range(3):
+            fax[2, i].set_xlabel(labx)
+
+            if not args.rv:
+                # add 2nd x-axis with R(V) values
+                tax = fax[0, i].twiny()
+                tax.set_xlim(fax[0, i].get_xlim())
+                tax.set_xticks(new_ticks)
+                tax.set_xticklabels(new_ticks_labels)
+                tax.set_xlabel(r"$R(V)$")
+
+        for i in range(3):
+            fax[i, 0].set_ylabel(laby)
 
     # Add the colourbar
     # cb = fig.colorbar(
@@ -683,6 +718,8 @@ if __name__ == "__main__":
     fname = "fuv_mir_rv_rep_waves"
     if args.rv:
         fname = f"{fname}_rv"
+    if args.curve:
+        fname = f"{fname}_curvature"
     if args.png:
         fig.savefig(f"{fname}.png")
     elif args.pdf:
