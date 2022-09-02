@@ -188,7 +188,7 @@ if __name__ == "__main__":
     all_tags = ["GCC09", "F19", "G21", "D22"]
     all_names = [names_gor09, names_fit19, names_gor21, names_dec22]
 
-    plot_props(ax, avs_gor09, rvs_gor09, psym_gor09, "G09")
+    plot_props(ax, avs_gor09, rvs_gor09, psym_gor09, "GCC09")
     for i, csamp in enumerate(all_names):
         print(all_tags[i], check_overlap(names_gor09, csamp))
     # plot_props(ax, avs_val04, rvs_val04, psym_val04, "V04")
