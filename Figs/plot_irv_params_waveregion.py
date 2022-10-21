@@ -17,8 +17,9 @@ from astropy.modeling.models import (
     # Legendre1D,
 )
 from dust_extinction.shapes import FM90
+from dust_extinction.parameter_averages import G23
 
-from helpers import G21mod, G22  # , G22pow  # , G22opt
+from helpers import G21mod  # , G22  # , G22pow  # , G22opt
 
 
 def plot_irv_ssamp(
@@ -431,7 +432,7 @@ if __name__ == "__main__":
             [fm90, fm90],
             datasets,
             colors,
-            wrange=[0.09, 0.33] * u.micron,
+            wrange=[0.0912, 0.33] * u.micron,
             no_weights=True,
         )
         ax[1].set_ylim(-0.3, 0.3)
@@ -745,7 +746,7 @@ if __name__ == "__main__":
         leg_loc = "upper center"
         labels = ["GCC09", "All", "F19", "D22", "G21"]
         label_colors = [gor09_color, aiue_color, fit19_color, dec22_color, gor21_color]
-        label_xpos = [0.105, 0.2, 0.5, 2.0, 12.0]
+        label_xpos = [0.115, 0.2, 0.5, 2.0, 12.0]
         label_ypos = 10.0
         for clabel, cxpos, ccolor in zip(labels, label_xpos, label_colors):
             ax[0].text(
@@ -774,7 +775,7 @@ if __name__ == "__main__":
         gor21_res = plot_irv_ssamp(ax, gor21_irs, "G21", color=gor21_color)
         xrange = [0.09, 35.0]
         yrange_a_type = "log"
-        yrange_a = [0.02, 20.0]
+        yrange_a = [0.015, 20.0]
         yrange_b_type = "symlog"
         yrange_b = [-2.0, 50.0]
         yrange_s_type = "log"
@@ -795,8 +796,9 @@ if __name__ == "__main__":
             30.0,
         ]
 
-        g22mod = G22(Rv=3.1)
-        modx = np.logspace(np.log10(0.091), np.log10(34.0), 1000) * u.micron
+        g22mod = G23(Rv=3.1)
+        modx = np.logspace(np.log10(0.0912), np.log10(32.0), 1000) * u.micron
+        g22mod.x_range = [1.0 / 40.0, 1.0 / 0.08]
         g22rv31 = g22mod(modx)
         ax[0].plot(modx, g22mod.a, "k-", alpha=0.5)
         ax[2].plot(modx, g22mod.b, "k-", alpha=0.5)

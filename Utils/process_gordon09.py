@@ -16,6 +16,7 @@ if __name__ == "__main__":
 
     for fname in files:
         ifile = fname.replace("_bin", "")
+
         ext = ExtData(ifile)
         # extfuse = ExtData(fname)
 
