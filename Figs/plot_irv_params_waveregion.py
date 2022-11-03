@@ -353,9 +353,11 @@ if __name__ == "__main__":
     font = {"size": fontsize}
     plt.rc("font", **font)
     plt.rc("lines", linewidth=3)
-    plt.rc("axes", linewidth=4)
-    plt.rc("xtick.major", width=4)
-    plt.rc("ytick.major", width=4)
+    plt.rc("axes", linewidth=3)
+    plt.rc("xtick.major", width=3, size=10)
+    plt.rc("xtick.minor", width=2, size=5)
+    plt.rc("ytick.major", width=3, size=10)
+    plt.rc("ytick.minor", width=2, size=5)
     fig, ax = plt.subplots(
         nrows=4,
         ncols=1,
@@ -568,37 +570,43 @@ if __name__ == "__main__":
 
         # plotting the components
         modx = np.linspace(0.30, 1.0, 100)
-        ax[0].plot(modx, fitted_models[0][0](1.0 / modx), "k:")
-
-        gvals = (datasets[0][1].value >= 1.0 / fitted_models[0].x_range[1]) & (
-            datasets[0][1].value <= 1.0 / fitted_models[0].x_range[0]
-        )
-        fitx = 1.0 / datasets[0][1][gvals].value
-        ax[1].plot(
-            datasets[0][1][gvals].value,
-            datasets[0][2][gvals] - fitted_models[0][0](fitx),
-            "k:",
-        )
+        ax[0].plot(modx, fitted_models[0][0](1.0 / modx), "k--", linewidth=2)
         for k in range(3):
-            ax[1].plot(
-                datasets[0][1][gvals].value,
-                fitted_models[0][k + 1](fitx),
-                "k--",
-            )
+            ax[0].plot(modx, fitted_models[0][0](1.0 / modx)
+                       + fitted_models[0][k + 1](1.0 / modx), "k:", linewidth=2)
 
-        ax[2].plot(modx, fitted_models[1][0](1.0 / modx), "k:")
+        # gvals = (datasets[0][1].value >= 1.0 / fitted_models[0].x_range[1]) & (
+        #     datasets[0][1].value <= 1.0 / fitted_models[0].x_range[0]
+        # )
+        # fitx = 1.0 / datasets[0][1][gvals].value
+        # ax[1].plot(
+        #     datasets[0][1][gvals].value,
+        #     datasets[0][2][gvals] - fitted_models[0][0](fitx),
+        #     "k:",
+        # )
+        # for k in range(3):
+        #     ax[1].plot(
+        #         datasets[0][1][gvals].value,
+        #         fitted_models[0][k + 1](fitx),
+        #         "k:",
+        #     )
 
-        ax[3].plot(
-            datasets[0][1][gvals].value,
-            datasets[0][3][gvals] - fitted_models[1][0](fitx),
-            "k:",
-        )
+        ax[2].plot(modx, fitted_models[1][0](1.0 / modx), "k--", linewidth=2)
         for k in range(3):
-            ax[3].plot(
-                datasets[0][1][gvals].value,
-                fitted_models[1][k + 1](fitx),
-                "k--",
-            )
+            ax[2].plot(modx, fitted_models[1][0](1.0 / modx)
+                       + fitted_models[1][k + 1](1.0 / modx), "k:", linewidth=2)
+
+        # ax[3].plot(
+        #     datasets[0][1][gvals].value,
+        #     datasets[0][3][gvals] - fitted_models[1][0](fitx),
+        #     "k:",
+        # )
+        # for k in range(3):
+        #     ax[3].plot(
+        #         datasets[0][1][gvals].value,
+        #         fitted_models[1][k + 1](fitx),
+        #         "k--",
+        #     )
 
     elif args.wavereg == "ir":
         labels = ["D22", "G21"]
