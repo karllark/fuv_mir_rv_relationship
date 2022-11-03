@@ -566,11 +566,11 @@ if __name__ == "__main__":
 
         # annotate features
         flabels = [
-            "ISS1\n%.4f" % (0.4370),
-            "ISS2\n%.4f" % (0.4870),
-            "ISS3\n%.4f" % (0.6800),
+            "ISS1\n%.4f $\mu$m" % (0.4370),
+            "ISS2\n%.4f $\mu$m" % (0.4870),
+            "ISS3\n%.4f $\mu$m" % (0.6800),
         ]
-        fpos = [(1.0 / 2.288, 0.85), (1.0 / 2.054, 0.6), (1.0 / 1.587, 0.4)]
+        fpos = [(1.0 / 2.298, 0.85), (1.0 / 2.034, 0.6), (1.0 / 1.587, 0.4)]
         for clab, cpos in zip(flabels, fpos):
             ax[0].annotate(
                 clab,
@@ -630,7 +630,7 @@ if __name__ == "__main__":
                         Line2D([0], [0], color="black", lw=2, linestyle="dotted", alpha=0.5)]
 
         ax[2].legend(custom_lines, ["Data", "Rejected Data", "Model",
-                                    "Polynomial Terms", "Feature Terms"],
+                                    "Polynomial Term", "Feature Terms"],
                      fontsize=fontsize*0.7)
 
     elif args.wavereg == "ir":
