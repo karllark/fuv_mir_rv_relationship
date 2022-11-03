@@ -2,6 +2,7 @@ import copy
 import argparse
 import matplotlib.pyplot as plt
 from matplotlib.ticker import ScalarFormatter
+from matplotlib.lines import Line2D
 import numpy as np
 
 import warnings
@@ -281,7 +282,7 @@ def plot_wavereg(ax, models, datasets, colors, wrange, no_weights=False):
     print(cmodelfit.param_names)
     print(repr(cmodelfit.parameters))
 
-    ax[0].plot(all_waves[gvals], cmodelfit(fitx))
+    ax[0].plot(all_waves[gvals], cmodelfit(fitx), color="k", alpha=0.5)
     ax[0].plot(all_waves[gvals], filtered_data, rejsym, label="rejected")
 
     for cdata, ccolor in zip(datasets, colors):
@@ -302,7 +303,7 @@ def plot_wavereg(ax, models, datasets, colors, wrange, no_weights=False):
     print(cmodelfit.param_names)
     print(repr(cmodelfit.parameters))
 
-    ax[2].plot(all_waves[gvals], cmodelfit(fitx))
+    ax[2].plot(all_waves[gvals], cmodelfit(fitx), color="k", alpha=0.5)
     ax[2].plot(all_waves[gvals], filtered_data, rejsym, label="rejected")
 
     for cdata, ccolor in zip(datasets, colors):
@@ -463,29 +464,41 @@ if __name__ == "__main__":
         tmodel = copy.deepcopy(fitted_models[0])
         tmodel.C3 = 0.0
         tmodel.C4 = 0.0
-        ax[0].plot(modx, tmodel(modx), "k--")
+        ax[0].plot(modx, tmodel(modx), "k--", alpha=0.5)
 
         tmodel = copy.deepcopy(fitted_models[0])
         tmodel.C3 = 0.0
-        ax[0].plot(modx, tmodel(modx), "k:")
+        ax[0].plot(modx, tmodel(modx), "k:", alpha=0.5)
 
         tmodel = copy.deepcopy(fitted_models[0])
         tmodel.C4 = 0.0
-        ax[0].plot(modx, tmodel(modx), "k:")
+        ax[0].plot(modx, tmodel(modx), "k:", alpha=0.5)
 
         # slope
         tmodel = copy.deepcopy(fitted_models[1])
         tmodel.C3 = 0.0
         tmodel.C4 = 0.0
-        ax[2].plot(modx, tmodel(modx), "k--")
+        ax[2].plot(modx, tmodel(modx), "k--", alpha=0.5)
 
         tmodel = copy.deepcopy(fitted_models[1])
         tmodel.C3 = 0.0
-        ax[2].plot(modx, tmodel(modx), "k:")
+        ax[2].plot(modx, tmodel(modx), "k:", alpha=0.5)
 
         tmodel = copy.deepcopy(fitted_models[1])
         tmodel.C4 = 0.0
-        ax[2].plot(modx, tmodel(modx), "k:")
+        ax[2].plot(modx, tmodel(modx), "k:", alpha=0.5)
+
+        custom_lines = [Line2D([0], [0], marker='o', color='w',
+                               markerfacecolor='k', markersize=6),
+                        Line2D([0], [0], marker='x', color='w',
+                               markerfacecolor='k', markeredgecolor='k', markersize=6),
+                        Line2D([0], [0], color="black", lw=2, linestyle="solid", alpha=0.5),
+                        Line2D([0], [0], color="black", lw=2, linestyle="dashed", alpha=0.5),
+                        Line2D([0], [0], color="black", lw=2, linestyle="dotted", alpha=0.5)]
+
+        ax[2].legend(custom_lines, ["Data", "Rejected Data", "Model",
+                                    "Linear Term", "Feature Terms"],
+                     fontsize=fontsize*0.7)
 
     elif args.wavereg == "opt":
         leg_loc = "upper right"
@@ -548,8 +561,8 @@ if __name__ == "__main__":
             wrange=[0.30, 1.2] * u.micron,
             no_weights=True,
         )
-        ax[1].set_ylim(-0.03, 0.1)
-        ax[3].set_ylim(-0.3, 0.4)
+        ax[1].set_ylim(-0.03, 0.03)
+        ax[3].set_ylim(-0.4, 0.4)
 
         # annotate features
         flabels = [
@@ -570,10 +583,10 @@ if __name__ == "__main__":
 
         # plotting the components
         modx = np.linspace(0.30, 1.0, 100)
-        ax[0].plot(modx, fitted_models[0][0](1.0 / modx), "k--", linewidth=2)
+        ax[0].plot(modx, fitted_models[0][0](1.0 / modx), "k--", linewidth=2, alpha=0.5)
         for k in range(3):
             ax[0].plot(modx, fitted_models[0][0](1.0 / modx)
-                       + fitted_models[0][k + 1](1.0 / modx), "k:", linewidth=2)
+                       + fitted_models[0][k + 1](1.0 / modx), "k:", linewidth=2, alpha=0.5)
 
         # gvals = (datasets[0][1].value >= 1.0 / fitted_models[0].x_range[1]) & (
         #     datasets[0][1].value <= 1.0 / fitted_models[0].x_range[0]
@@ -591,10 +604,10 @@ if __name__ == "__main__":
         #         "k:",
         #     )
 
-        ax[2].plot(modx, fitted_models[1][0](1.0 / modx), "k--", linewidth=2)
+        ax[2].plot(modx, fitted_models[1][0](1.0 / modx), "k--", linewidth=2, alpha=0.5)
         for k in range(3):
             ax[2].plot(modx, fitted_models[1][0](1.0 / modx)
-                       + fitted_models[1][k + 1](1.0 / modx), "k:", linewidth=2)
+                       + fitted_models[1][k + 1](1.0 / modx), "k:", linewidth=2, alpha=0.5)
 
         # ax[3].plot(
         #     datasets[0][1][gvals].value,
@@ -607,6 +620,18 @@ if __name__ == "__main__":
         #         fitted_models[1][k + 1](fitx),
         #         "k--",
         #     )
+
+        custom_lines = [Line2D([0], [0], marker='o', color='w',
+                               markerfacecolor='k', markersize=6),
+                        Line2D([0], [0], marker='x', color='w',
+                               markerfacecolor='k', markeredgecolor='k', markersize=6),
+                        Line2D([0], [0], color="black", lw=2, linestyle="solid", alpha=0.5),
+                        Line2D([0], [0], color="black", lw=2, linestyle="dashed", alpha=0.5),
+                        Line2D([0], [0], color="black", lw=2, linestyle="dotted", alpha=0.5)]
+
+        ax[2].legend(custom_lines, ["Data", "Rejected Data", "Model",
+                                    "Polynomial Terms", "Feature Terms"],
+                     fontsize=fontsize*0.7)
 
     elif args.wavereg == "ir":
         labels = ["D22", "G21"]
@@ -699,21 +724,21 @@ if __name__ == "__main__":
         tmodel = copy.deepcopy(fitted_models[0])
         tmodel.sil1_amp = 0.0
         tmodel.sil2_amp = 0.0
-        ax[0].plot(modx, tmodel(modx), "k--")
+        ax[0].plot(modx, tmodel(modx), "k--", alpha=0.5)
 
         tmodel = copy.deepcopy(fitted_models[0])
         tmodel.sil2_amp = 0.0
-        ax[0].plot(modx, tmodel(modx), "k:")
+        ax[0].plot(modx, tmodel(modx), "k:", alpha=0.5)
 
         tmodel = copy.deepcopy(fitted_models[0])
         tmodel.sil1_amp = 0.0
-        ax[0].plot(modx, tmodel(modx), "k:")
+        ax[0].plot(modx, tmodel(modx), "k:", alpha=0.5)
 
-        tmodel = copy.deepcopy(fitted_models[0])
-        tmodel.scale = 0.0
-        tmodel.sil1_amp = 0.0
-        tmodel.sil2_amp = 0.0
-        ax[1].plot(modx, tmodel(modx), "k:")
+        # tmodel = copy.deepcopy(fitted_models[0])
+        # tmodel.scale = 0.0
+        # tmodel.sil1_amp = 0.0
+        # tmodel.sil2_amp = 0.0
+        # ax[1].plot(modx, tmodel(modx), "k:", alpha=0.5)
 
         # tmodel = copy.deepcopy(fitted_models[0])
         # swave = tmodel.swave
@@ -749,6 +774,25 @@ if __name__ == "__main__":
                 alpha=0.7,
                 bbox=props,
             )
+
+        custom_lines = [Line2D([0], [0], marker='o', color='w',
+                               markerfacecolor='k', markersize=6),
+                        Line2D([0], [0], marker='x', color='w',
+                               markerfacecolor='k', markeredgecolor='k', markersize=6),
+                        Line2D([0], [0], color="black", lw=2, linestyle="solid", alpha=0.5),
+                        Line2D([0], [0], color="black", lw=2, linestyle="dashed", alpha=0.5),
+                        Line2D([0], [0], color="black", lw=2, linestyle="dotted", alpha=0.5)]
+
+        ax[0].legend(custom_lines, ["Data", "Rejected Data", "Model",
+                                    "Powerlaw Terms", "Feature Terms"],
+                     fontsize=fontsize*0.7, loc="lower left")
+
+        custom_lines = [Line2D([0], [0], marker='o', color='w',
+                               markerfacecolor='k', markersize=6),
+                        Line2D([0], [0], color="black", lw=2, linestyle="solid", alpha=0.5)]
+
+        ax[2].legend(custom_lines, ["Data", "Model"],
+                     fontsize=fontsize*0.7, loc="lower right")
 
     else:
         leg_loc = "upper center"
@@ -878,6 +922,13 @@ if __name__ == "__main__":
                 alpha=0.7,
                 bbox=props,
             )
+
+        custom_lines = [Line2D([0], [0], marker='o', color='w',
+                               markerfacecolor='k', markersize=6),
+                        Line2D([0], [0], color="black", lw=2, linestyle="solid", alpha=0.5)]
+
+        ax[2].legend(custom_lines, ["Data", "Model"],
+                     fontsize=fontsize*0.7)
 
     # set the wavelength range for all the plots
     ax[3].set_xscale("log")
