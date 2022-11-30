@@ -144,7 +144,8 @@ def fit_2Dcorrelated_fast(x, y, covs, fit_model, intinfo):
     return fit_model
 
 
-def fit_2Dcorrelated_emcee(x, y, covs, fit_model, intinfo, nsteps=100, progress=False):
+def fit_2Dcorrelated_emcee(x, y, covs, fit_model, intinfo, nsteps=100, progress=False,
+                           sfilename=None):
     """
     Do emcee based sampling with correlated lnlike function.
     """
@@ -156,8 +157,15 @@ def fit_2Dcorrelated_emcee(x, y, covs, fit_model, intinfo, nsteps=100, progress=
     nwalkers = 2 * ndim
     pos = fit_model.parameters + 1e-3 * np.random.randn(nwalkers, ndim)
 
+    if sfilename is not None:
+        backend = emcee.backends.HDFBackend(sfilename)
+        backend.reset(nwalkers, ndim)
+    else:
+        backend = None
+
     sampler = emcee.EnsembleSampler(
-        nwalkers, ndim, lnlike_correlated_fast, args=(datamod, fit_model, intinfo)
+        nwalkers, ndim, lnlike_correlated_fast, args=(datamod, fit_model, intinfo),
+        backend=backend
     )
     sampler.run_mcmc(pos, nsteps, progress=progress)
 

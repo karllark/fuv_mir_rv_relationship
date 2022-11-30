@@ -96,6 +96,7 @@ def fit_allwaves(
     do_mcfit=False,
     do_2dfit=True,
     do_2dfit_emcee=False,
+    save_chains=False,
 ):
     """
     Fit all the wavelengths for a sample of curves for the specified data
@@ -207,7 +208,10 @@ def fit_allwaves(
             if do_2dfit:
                 # fit with new full 2D fitting (use unweigthed linear fit to start)
                 intinfo = [-0.20, 0.20, 0.0001]
-
+                if save_chains:
+                    chain_filename = f"results/chains/{src}_{rwave.value}.h5"
+                else:
+                    chain_filename = None
                 if do_2dfit_emcee:
                     nsteps = 1000
                     fit2d_line = fit_2Dcorrelated_emcee(
@@ -217,6 +221,7 @@ def fit_allwaves(
                         fitted_line,
                         intinfo,
                         nsteps=nsteps,
+                        sfilename=chain_filename,
                     )
                     # bparams = get_best_fit_params(fit2d_line.sampler)
 
