@@ -270,7 +270,7 @@ def fit_allwaves(
 
             # do Monte Carlo fitting if asked
             if do_mcfit:
-                nummc = 1000
+                nummc = 3000
                 mcparams = mcfit_cov(
                     xvals[gvals], yvals[gvals], covs, not_mask, num=nummc
                 )
