@@ -6,6 +6,8 @@ import numpy as np
 from astropy.modeling import models, fitting
 from astropy.table import QTable
 
+import linmix
+
 # from astropy.stats import sigma_clip
 from hyperfit.linfit import LinFit as HFLinFit
 
@@ -94,8 +96,9 @@ def fit_allwaves(
     hfemcee=False,
     do_hfit=False,
     do_mcfit=False,
-    do_2dfit=True,
+    do_2dfit=False,
     do_2dfit_emcee=False,
+    do_linmix=False,
     save_chains=False,
 ):
     """
@@ -137,6 +140,13 @@ def fit_allwaves(
     d2intercepts_quad = np.zeros((nwaves))
     d2rmss_quad = np.zeros((nwaves))
     d2lnlikes_quad = np.zeros((nwaves))
+
+    lmslopes = np.zeros((nwaves))
+    lmslopes_unc = np.zeros((nwaves))
+    lmintercepts = np.zeros((nwaves))
+    lmintercepts_unc = np.zeros((nwaves))
+    lmsigmas = np.zeros((nwaves))
+    lmsigmas_unc = np.zeros((nwaves))
 
     mcslopes = np.zeros((nwaves))
     mcslopes_unc = np.zeros((nwaves))
@@ -268,6 +278,26 @@ def fit_allwaves(
                 )
                 d2lnlikes_quad[k] = -1.0 * fit2d_quad.result["fun"]
 
+            # do fit with linmix
+            if do_linmix:
+
+                lm = linmix.LinMix(
+                    xvals[gvals],
+                    yvals[gvals],
+                    xvals_unc[gvals],
+                    yvals_unc[gvals],
+                    covs[:, 0, 1],
+                    K=2,
+                )
+                lm.run_mcmc(silent=True)
+
+                lmslopes[k] = np.mean(lm.chain[:]["alpha"])
+                lmslopes_unc[k] = np.std(lm.chain[:]["alpha"])
+                lmintercepts[k] = np.mean(lm.chain[:]["beta"])
+                lmintercepts_unc[k] = np.std(lm.chain[:]["beta"])
+                lmsigmas[k] = np.mean(lm.chain[:]["sigsqr"])
+                lmsigmas_unc[k] = np.std(lm.chain[:]["sigsqr"])
+
             # do Monte Carlo fitting if asked
             if do_mcfit:
                 nummc = 3000
@@ -356,6 +386,14 @@ def fit_allwaves(
         otab["d2intercepts_quad"] = d2intercepts_quad
         otab["d2lnlikes_quad"] = d2lnlikes_quad
 
+    if do_linmix:
+        otab["lmslopes"] = lmslopes
+        otab["lmintercepts"] = lmintercepts
+        otab["lmslopes_std"] = lmslopes_unc
+        otab["lmintercepts_std"] = lmintercepts_unc
+        otab["lmsigmas"] = lmsigmas
+        otab["lmsigmas_unc"] = lmsigmas_unc
+
     if do_mcfit:
         otab["mcslopes"] = mcslopes
         otab["mcintercepts"] = mcintercepts
@@ -402,7 +440,9 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     hfemcee = False
-    do_2dfit_emcee = True
+    do_2dfit=False
+    do_2dfit_emcee = False
+    do_linmix = True
 
     if args.dataset == "G09":
         exts_gor09 = get_exts("gor09")
@@ -411,7 +451,9 @@ if __name__ == "__main__":
             "FUSE",
             "gor09_fuse_irv_params.fits",
             hfemcee=hfemcee,
+            do_2dfit=do_2dfit,
             do_2dfit_emcee=do_2dfit_emcee,
+            do_linmix=do_linmix,
         )
         # fit_allwaves(exts_gor09, "IUE", "gor09_iue_irv_params.fits", hfemcee=hfemcee)
     elif args.dataset == "F19":
@@ -421,7 +463,9 @@ if __name__ == "__main__":
             "STIS",
             "fit19_stis_irv_params.fits",
             hfemcee=hfemcee,
+            do_2dfit=do_2dfit,
             do_2dfit_emcee=do_2dfit_emcee,
+            do_linmix=do_linmix,
         )
     elif args.dataset == "G21":
         exts_gor21 = get_exts("gor21")
@@ -431,7 +475,9 @@ if __name__ == "__main__":
             "IRS",
             "gor21_irs_irv_params.fits",
             hfemcee=hfemcee,
+            do_2dfit=do_2dfit,
             do_2dfit_emcee=do_2dfit_emcee,
+            do_linmix=do_linmix,
         )
     elif args.dataset == "D22":
         exts_dec22 = get_exts("dec22")
@@ -441,14 +487,18 @@ if __name__ == "__main__":
             "SpeX_SXD",
             "dec22_spexsxd_irv_params.fits",
             hfemcee=hfemcee,
+            do_2dfit=do_2dfit,
             do_2dfit_emcee=do_2dfit_emcee,
+            do_linmix=do_linmix,
         )
         fit_allwaves(
             exts_dec22,
             "SpeX_LXD",
             "dec22_spexlxd_irv_params.fits",
             hfemcee=hfemcee,
+            do_2dfit=do_2dfit,
             do_2dfit_emcee=do_2dfit_emcee,
+            do_linmix=do_linmix,
         )
     elif args.dataset == "AIUE":
         exts_gor09 = get_exts("gor09")
@@ -456,4 +506,12 @@ if __name__ == "__main__":
         exts_gor21 = get_exts("gor21")
         exts_dec22 = get_exts("dec22")
         all_exts = exts_gor09 + exts_fit19 + exts_gor21 + exts_dec22
-        fit_allwaves(all_exts, "IUE", "aiue_iue_irv_params.fits", hfemcee=hfemcee)
+        fit_allwaves(
+            all_exts,
+            "IUE",
+            "aiue_iue_irv_params.fits",
+            hfemcee=hfemcee,
+            do_2dfit=do_2dfit,
+            do_2dfit_emcee=do_2dfit_emcee,
+            do_linmix=do_linmix,
+        )

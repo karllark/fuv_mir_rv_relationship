@@ -75,6 +75,41 @@ def plot_irv_ssamp(
                 color="red",
                 alpha=0.75,
             )
+
+    if "lmslopes" in itab.colnames:
+        itab["lmslopes"][bvals] = np.NAN
+        itab["lmintercepts"][bvals] = np.NAN
+
+        if "lmslopes_std" not in itab.colnames:
+            itab["lmslopes_std"] = itab["lmslopes"] * 0.0
+            itab["lmintercepts_std"] = itab["lmintercepts"] * 0.0
+        for k, cname in enumerate(["lmintercepts", "lmslopes"]):
+            ax[k * 2].plot(
+                itab["waves"][gvals],
+                itab[cname][gvals],
+                linestyle="dotted",
+                color=color,
+                label=label,
+                alpha=0.75,
+            )
+
+            ax[k * 2].fill_between(
+                itab["waves"][gvals].value,
+                itab[cname][gvals] - itab[f"{cname}_std"],
+                itab[cname][gvals] + itab[f"{cname}_std"],
+                color=color,
+                alpha=0.25,
+            )
+
+        return (
+            itab["npts"],
+            itab["waves"],
+            itab["lmintercepts"],
+            itab["lmslopes"],
+            itab["lmintercepts_std"],
+            itab["lmslopes_std"],
+        )
+
     if "d2slopes" in itab.colnames:
         itab["d2slopes"][bvals] = np.NAN
         itab["d2intercepts"][bvals] = np.NAN

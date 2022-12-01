@@ -15,6 +15,8 @@ from astropy.table import Table
 
 # from astropy.stats import sigma_clip
 
+import linmix
+
 from hyperfit.linfit import LinFit as HFLinFit
 
 from measure_extinction.extdata import ExtData
@@ -243,6 +245,8 @@ if __name__ == "__main__":
     do_hfit = False
     do_mcfit = False
     do_quad = False
+    do_2dcorr = True
+    do_linmix = True
 
     nsteps = 1000
 
@@ -517,42 +521,56 @@ if __name__ == "__main__":
                 ax[i], xvals[gvals], yvals[gvals], covs, color="black", alpha=0.1
             )
 
-            # fit with new full 2D fitting
-            intinfo = [-0.20, 0.20, 0.001]
-            # fit2d_line = fit_2Dcorrelated(
-            #     xvals[gvals], yvals[gvals], covs, fitted_line, intinfo
-            # )
-            # print(fit2d_line.result["fun"], fit2d_line.slope)
-            fit2d_line = fit_2Dcorrelated_fast(
-                xvals[gvals], yvals[gvals], covs, fitted_line, intinfo
-            )
-            print(fit2d_line.result["fun"])
+            if do_2dcorr:
+                # fit with new full 2D fitting
+                intinfo = [-0.20, 0.20, 0.001]
+                # fit2d_line = fit_2Dcorrelated(
+                #     xvals[gvals], yvals[gvals], covs, fitted_line, intinfo
+                # )
+                # print(fit2d_line.result["fun"], fit2d_line.slope)
+                fit2d_line = fit_2Dcorrelated_fast(
+                    xvals[gvals], yvals[gvals], covs, fitted_line, intinfo
+                )
+                print(fit2d_line.result["fun"])
 
-            ax[i].plot(mod_xvals, fit2d_line(mod_xvals), "k-", alpha=0.75, lw=3)
+                ax[i].plot(mod_xvals, fit2d_line(mod_xvals), "k-", alpha=0.75, lw=3)
 
-            fit2d_line = fit_2Dcorrelated_emcee(
-                xvals[gvals],
-                yvals[gvals],
-                covs,
-                fit2d_line,
-                intinfo,
-                nsteps=nsteps,
-                progress=True,
-            )
-            bparams = get_best_fit_params(fit2d_line.sampler)
-            print(bparams)
+                fit2d_line = fit_2Dcorrelated_emcee(
+                    xvals[gvals],
+                    yvals[gvals],
+                    covs,
+                    fit2d_line,
+                    intinfo,
+                    nsteps=nsteps,
+                    progress=True,
+                )
+                bparams = get_best_fit_params(fit2d_line.sampler)
+                print(bparams)
 
-            samples = fit2d_line.sampler.get_chain(flat=True, discard=int(0.1 * nsteps))
+                samples = fit2d_line.sampler.get_chain(flat=True, discard=int(0.1 * nsteps))
 
-            d2slopes = np.mean(samples[:, 1])
-            d2slopes_unc = np.std(samples[:, 1])
-            d2intercepts = np.mean(samples[:, 0])
-            d2intercepts_unc = np.std(samples[:, 0])
-            print(d2slopes, d2intercepts)
-            print(d2slopes_unc, d2intercepts_unc)
+                d2slopes = np.mean(samples[:, 1])
+                d2slopes_unc = np.std(samples[:, 1])
+                d2intercepts = np.mean(samples[:, 0])
+                d2intercepts_unc = np.std(samples[:, 0])
+                print(d2slopes, d2intercepts)
+                print(d2slopes_unc, d2intercepts_unc)
 
-            fit2d_line.slope = d2slopes
-            fit2d_line.intercept = d2intercepts
+                fit2d_line.slope = d2slopes
+                fit2d_line.intercept = d2intercepts
+
+            if do_linmix:
+
+                lm = linmix.LinMix(xvals[gvals], yvals[gvals],
+                                   xvals_unc[gvals], yvals_unc[gvals],
+                                   covs[:, 0, 1], K=2)
+                lm.run_mcmc(silent=False)
+                print("****")
+                intercept = np.mean(lm.chain[:]["alpha"])
+                slope = np.mean(lm.chain[:]["beta"])
+                print(intercept, slope)
+                mody = intercept + slope * mod_xvals
+                ax[i].plot(mod_xvals, mody, "k--", alpha=0.75, lw=3)
 
             if do_quad:
                 fit2d_quad = fit_2Dcorrelated(
