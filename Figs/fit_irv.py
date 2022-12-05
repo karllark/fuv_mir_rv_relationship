@@ -217,13 +217,13 @@ def fit_allwaves(
             # do the 2D covariance fitting
             if do_2dfit:
                 # fit with new full 2D fitting (use unweigthed linear fit to start)
-                intinfo = [-0.20, 0.20, 0.0001]
+                intinfo = [-0.30, 0.30, 0.0001]
                 if save_chains:
                     chain_filename = f"results/chains/{src}_{rwave.value}.h5"
                 else:
                     chain_filename = None
                 if do_2dfit_emcee:
-                    nsteps = 1000
+                    nsteps = 3000
                     fit2d_line = fit_2Dcorrelated_emcee(
                         xvals[gvals],
                         yvals[gvals],
@@ -440,9 +440,9 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     hfemcee = False
-    do_2dfit=False
-    do_2dfit_emcee = False
-    do_linmix = True
+    do_2dfit = True
+    do_2dfit_emcee = True
+    do_linmix = False
 
     if args.dataset == "G09":
         exts_gor09 = get_exts("gor09")
@@ -455,7 +455,6 @@ if __name__ == "__main__":
             do_2dfit_emcee=do_2dfit_emcee,
             do_linmix=do_linmix,
         )
-        # fit_allwaves(exts_gor09, "IUE", "gor09_iue_irv_params.fits", hfemcee=hfemcee)
     elif args.dataset == "F19":
         exts_fit19 = get_exts("fit19")
         fit_allwaves(
@@ -469,7 +468,6 @@ if __name__ == "__main__":
         )
     elif args.dataset == "G21":
         exts_gor21 = get_exts("gor21")
-        # fit_allwaves(exts_gor21, "IUE", "gor21_iue_irv_params.fits", hfemcee=hfemcee)
         fit_allwaves(
             exts_gor21,
             "IRS",
@@ -481,7 +479,6 @@ if __name__ == "__main__":
         )
     elif args.dataset == "D22":
         exts_dec22 = get_exts("dec22")
-        # fit_allwaves(exts_dec22, "IUE", "dec22_iue_irv_params.fits", hfemcee=hfemcee)
         fit_allwaves(
             exts_dec22,
             "SpeX_SXD",
