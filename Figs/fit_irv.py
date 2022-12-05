@@ -217,7 +217,7 @@ def fit_allwaves(
             # do the 2D covariance fitting
             if do_2dfit:
                 # fit with new full 2D fitting (use unweigthed linear fit to start)
-                intinfo = [-0.30, 0.30, 0.0001]
+                intinfo = [-0.30, 0.30, 0.005]
                 if save_chains:
                     chain_filename = f"results/chains/{src}_{rwave.value}.h5"
                 else:

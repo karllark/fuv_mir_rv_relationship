@@ -1,5 +1,6 @@
 import numpy as np
 from scipy.stats import multivariate_normal
+from scipy.special import erf
 
 import matplotlib.pyplot as plt
 from astropy.modeling import models
@@ -50,9 +51,83 @@ def lnlike_correlated(params, measured_vals, updated_model, cov, intinfo, x):
         modaves = modvals[1:] + modvals[:-1]
         tintegral = np.sum(modaves * lindist)
         if tintegral != 0.0:
-            lineintegral += np.log(tintegral / totlength)
+            # lineintegral += np.log(tintegral / totlength)
+            lineintegral += np.log(tintegral)
     if lineintegral == 0.0 or not np.isfinite(lineintegral):
         lineintegral = -1e20
+
+    return lineintegral
+
+
+def lnlike_correlated_analytic(params, measured_vals, updated_model, cov, intinfo, x):
+    """
+    Compute the natural log of the likelihood that a model fits
+    (x, y) data points that have correlated uncertainties given
+    in the covariance matrix.  This is done by computing the line
+    integral along the model evaluating the likelihood each x,y data
+    point matches the model thereby getting the total likelihood
+    that the data is from that model.  Should be the full solution unlike
+    fitting assuming only y uncs or fitting with the orthogonal distance
+    regression (ODR).
+
+    Parameters
+    ----------
+    measured_vals : ndarray of length N
+        Measured data values.
+    updated_model : `~astropy.modeling.Model`
+        Model with parameters set by the current iteration of the solver.
+    cov : ndarray (N, 2, 2)
+        2x2 covariance matrices for each (x, y) data points
+    intinfo : 3 element array
+        line integration info with (x min, x max, x delta) values
+    x : ndarray
+        Independent variable "x" on which to evaluate the model.
+    """
+    updated_model.parameters = params
+
+    # slope, intercept = params
+    slope = updated_model.slope
+    intercept = updated_model.intercept
+
+    lineint_const = np.sqrt(3. ** 2 + (intercept + 3. * slope) ** 2)
+
+    lineintegral = 0.0
+    for k in range(len(x)):
+        mux = x[k]
+        muy = measured_vals[k]
+        sigx = np.sqrt(cov[k, 0, 0])
+        sigy = np.sqrt(cov[k, 1, 1])
+        rho = cov[k, 0, 1] / (sigx * sigy)
+        onerhosqr = 1. - rho ** 2
+        A = 1. / (2. * np.pi * sigx * sigy * np.sqrt(onerhosqr))
+        B = 1. / (2. * onerhosqr * sigx ** 2)
+        C = 1. / (2. * onerhosqr * sigx * sigy)
+        D = 1. / (2. * onerhosqr * sigy ** 2)
+
+        w = intercept + slope
+        H1 = B * mux ** 2 + C * mux * (intercept + muy) + D * (intercept ** 2 - intercept * muy + muy ** 2)
+        H2 = -2. * B * mux + C * (muy + w - intercept) + 2. * D * w * (intercept - w)
+        H3 = B - C * w + D * w ** 2
+
+        # term1 = erf((2. * H3 * 0.3 + H2)/(2. * np.sqrt(H3)))   # from + limit
+        # term2 = erf((2. * H3 * -0.3 + H2)/(2. * np.sqrt(H3)))  # from -limit
+        # curint = ((np.sqrt(np.pi) * np.exp((H2 ** 2 / (4. * H3)) - H1) * (term1 - term2))
+        #           / (2. * np.sqrt(H3)))
+        # print(curint)
+        # print(H1, H2, H3)
+        expval = (H2 ** 2 / (4. * H3)) - H1
+        if expval < 500:
+            curint = A * lineint_const * np.sqrt(np.pi) * np.exp(expval) / np.sqrt(H3)
+        else:
+            curint = 0.0
+        # print(curint)
+        if curint != 0.0 and np.isfinite(lineintegral):
+            lineintegral += np.log(curint)
+
+    if lineintegral == 0.0 or not np.isfinite(lineintegral):
+        lineintegral = -1e20
+        # print(A)
+        # print(np.log(lineintegral))
 
     return lineintegral
 
@@ -136,7 +211,32 @@ def fit_2Dcorrelated_fast(x, y, covs, fit_model, intinfo):
 
     params = fit_model.parameters
     # print("start:", params)
+    # result = op.minimize(nll, params, args=(datamod, fit_model, intinfo))
     result = op.minimize(nll, params, args=(datamod, fit_model, intinfo))
+
+    fit_model.parameters = result["x"]
+    fit_model.result = result
+    # print("end:", fit_model.parameters)
+    return fit_model
+
+
+def fit_2Dcorrelated_analytic_fast(x, y, covs, fit_model, intinfo):
+    """
+    Do standard optimization fitting with correlated lnlike function.
+    """
+
+    datamod = []
+    for k in range(len(x)):
+        datamod.append(multivariate_normal([x[k], y[k]], covs[k, :, :]))
+
+    def nll(*args):
+        return -lnlike_correlated_analytic(*args)
+
+    params = fit_model.parameters
+    # print("start:", params)
+    # result = op.minimize(nll, params, args=(datamod, fit_model, intinfo))
+    # result = op.minimize(nll, params, args=(datamod, fit_model, intinfo))
+    result = op.minimize(nll, params, args=(y, fit_model, covs, intinfo, x))
 
     fit_model.parameters = result["x"]
     fit_model.result = result
@@ -165,6 +265,7 @@ def fit_2Dcorrelated_emcee(x, y, covs, fit_model, intinfo, nsteps=100, progress=
 
     sampler = emcee.EnsembleSampler(
         nwalkers, ndim, lnlike_correlated_fast, args=(datamod, fit_model, intinfo),
+        # nwalkers, ndim, lnlike_correlated_analytic, args=(y, fit_model, covs, intinfo, x),
         backend=backend
     )
     sampler.run_mcmc(pos, nsteps, progress=progress)

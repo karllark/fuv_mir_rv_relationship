@@ -25,7 +25,7 @@ from fit_irv import get_irvs, get_alav, get_best_fit_params
 from helpers import mcfit_cov, mcfit_cov_quad
 
 from fit_full2dcor import fit_2Dcorrelated, fit_2Dcorrelated_emcee
-from fit_full2dcor import fit_2Dcorrelated_fast
+from fit_full2dcor import fit_2Dcorrelated_fast, fit_2Dcorrelated_analytic_fast
 
 
 def plot_exts(exts, rvs, avs, ctype, cwave, psym, label, alpha=0.5):
@@ -246,7 +246,7 @@ if __name__ == "__main__":
     do_mcfit = False
     do_quad = False
     do_2dcorr = True
-    do_linmix = True
+    do_linmix = False
 
     nsteps = 1000
 
@@ -523,17 +523,18 @@ if __name__ == "__main__":
 
             if do_2dcorr:
                 # fit with new full 2D fitting
-                intinfo = [-0.20, 0.20, 0.001]
+                intinfo = [-0.30, 0.30, 0.001]
                 # fit2d_line = fit_2Dcorrelated(
                 #     xvals[gvals], yvals[gvals], covs, fitted_line, intinfo
                 # )
                 # print(fit2d_line.result["fun"], fit2d_line.slope)
+                # fit2d_line = fit_2Dcorrelated_analytic_fast(
                 fit2d_line = fit_2Dcorrelated_fast(
                     xvals[gvals], yvals[gvals], covs, fitted_line, intinfo
                 )
                 print(fit2d_line.result["fun"])
 
-                ax[i].plot(mod_xvals, fit2d_line(mod_xvals), "k-", alpha=0.75, lw=3)
+                ax[i].plot(mod_xvals, fit2d_line(mod_xvals), "k-", alpha=0.75, lw=1)
 
                 fit2d_line = fit_2Dcorrelated_emcee(
                     xvals[gvals],
@@ -549,12 +550,23 @@ if __name__ == "__main__":
 
                 samples = fit2d_line.sampler.get_chain(flat=True, discard=int(0.1 * nsteps))
 
-                d2slopes = np.mean(samples[:, 1])
-                d2slopes_unc = np.std(samples[:, 1])
-                d2intercepts = np.mean(samples[:, 0])
-                d2intercepts_unc = np.std(samples[:, 0])
+                d2slopes = np.mean(samples[:, 0])
+                d2slopes_unc = np.std(samples[:, 0])
+                d2intercepts = np.mean(samples[:, 1])
+                d2intercepts_unc = np.std(samples[:, 1])
                 print(d2slopes, d2intercepts)
                 print(d2slopes_unc, d2intercepts_unc)
+
+                nplot = 100
+                for z in range(nplot):
+                    y = int((z / float(nplot)) * (0.1 * nsteps))
+                    # y = 500 + z * 10
+                    # print("*****")
+                    # print(fit2d_line.parameters)
+                    fit2d_line.slope = samples[y, 0]
+                    fit2d_line.intercept = samples[y, 1]
+                    # print(fit2d_line.parameters)
+                    ax[i].plot(mod_xvals, fit2d_line(mod_xvals), "k-", alpha=0.05, lw=1)
 
                 fit2d_line.slope = d2slopes
                 fit2d_line.intercept = d2intercepts
