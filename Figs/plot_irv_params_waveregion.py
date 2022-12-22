@@ -523,17 +523,27 @@ if __name__ == "__main__":
         tmodel.C4 = 0.0
         ax[2].plot(modx, tmodel(modx), "k:", alpha=0.5)
 
-        custom_lines = [Line2D([0], [0], marker='o', color='w',
-                               markerfacecolor='k', markersize=6),
-                        Line2D([0], [0], marker='x', color='w',
-                               markerfacecolor='k', markeredgecolor='k', markersize=6),
-                        Line2D([0], [0], color="black", lw=2, linestyle="solid", alpha=0.5),
-                        Line2D([0], [0], color="black", lw=2, linestyle="dashed", alpha=0.5),
-                        Line2D([0], [0], color="black", lw=2, linestyle="dotted", alpha=0.5)]
+        custom_lines = [
+            Line2D([0], [0], marker="o", color="w", markerfacecolor="k", markersize=6),
+            Line2D(
+                [0],
+                [0],
+                marker="x",
+                color="w",
+                markerfacecolor="k",
+                markeredgecolor="k",
+                markersize=6,
+            ),
+            Line2D([0], [0], color="black", lw=2, linestyle="solid", alpha=0.5),
+            Line2D([0], [0], color="black", lw=2, linestyle="dashed", alpha=0.5),
+            Line2D([0], [0], color="black", lw=2, linestyle="dotted", alpha=0.5),
+        ]
 
-        ax[2].legend(custom_lines, ["Data", "Rejected Data", "Model",
-                                    "Linear Term", "Feature Terms"],
-                     fontsize=fontsize*0.7)
+        ax[2].legend(
+            custom_lines,
+            ["Data", "Rejected Data", "Model", "Linear Term", "Feature Terms"],
+            fontsize=fontsize * 0.7,
+        )
 
     elif args.wavereg == "opt":
         leg_loc = "upper right"
@@ -601,9 +611,9 @@ if __name__ == "__main__":
 
         # annotate features
         flabels = [
-            "ISS1\n%.4f $\mu$m" % (0.4370),
-            "ISS2\n%.4f $\mu$m" % (0.4870),
-            "ISS3\n%.4f $\mu$m" % (0.6800),
+            r"ISS1\n%.4f $\mu$m" % (0.4370),
+            r"ISS2\n%.4f $\mu$m" % (0.4870),
+            r"ISS3\n%.4f $\mu$m" % (0.6800),
         ]
         fpos = [(1.0 / 2.298, 0.85), (1.0 / 2.034, 0.6), (1.0 / 1.587, 0.4)]
         for clab, cpos in zip(flabels, fpos):
@@ -620,8 +630,13 @@ if __name__ == "__main__":
         modx = np.linspace(0.30, 1.0, 100)
         ax[0].plot(modx, fitted_models[0][0](1.0 / modx), "k--", linewidth=2, alpha=0.5)
         for k in range(3):
-            ax[0].plot(modx, fitted_models[0][0](1.0 / modx)
-                       + fitted_models[0][k + 1](1.0 / modx), "k:", linewidth=2, alpha=0.5)
+            ax[0].plot(
+                modx,
+                fitted_models[0][0](1.0 / modx) + fitted_models[0][k + 1](1.0 / modx),
+                "k:",
+                linewidth=2,
+                alpha=0.5,
+            )
 
         # gvals = (datasets[0][1].value >= 1.0 / fitted_models[0].x_range[1]) & (
         #     datasets[0][1].value <= 1.0 / fitted_models[0].x_range[0]
@@ -641,8 +656,13 @@ if __name__ == "__main__":
 
         ax[2].plot(modx, fitted_models[1][0](1.0 / modx), "k--", linewidth=2, alpha=0.5)
         for k in range(3):
-            ax[2].plot(modx, fitted_models[1][0](1.0 / modx)
-                       + fitted_models[1][k + 1](1.0 / modx), "k:", linewidth=2, alpha=0.5)
+            ax[2].plot(
+                modx,
+                fitted_models[1][0](1.0 / modx) + fitted_models[1][k + 1](1.0 / modx),
+                "k:",
+                linewidth=2,
+                alpha=0.5,
+            )
 
         # ax[3].plot(
         #     datasets[0][1][gvals].value,
@@ -656,17 +676,27 @@ if __name__ == "__main__":
         #         "k--",
         #     )
 
-        custom_lines = [Line2D([0], [0], marker='o', color='w',
-                               markerfacecolor='k', markersize=6),
-                        Line2D([0], [0], marker='x', color='w',
-                               markerfacecolor='k', markeredgecolor='k', markersize=6),
-                        Line2D([0], [0], color="black", lw=2, linestyle="solid", alpha=0.5),
-                        Line2D([0], [0], color="black", lw=2, linestyle="dashed", alpha=0.5),
-                        Line2D([0], [0], color="black", lw=2, linestyle="dotted", alpha=0.5)]
+        custom_lines = [
+            Line2D([0], [0], marker="o", color="w", markerfacecolor="k", markersize=6),
+            Line2D(
+                [0],
+                [0],
+                marker="x",
+                color="w",
+                markerfacecolor="k",
+                markeredgecolor="k",
+                markersize=6,
+            ),
+            Line2D([0], [0], color="black", lw=2, linestyle="solid", alpha=0.5),
+            Line2D([0], [0], color="black", lw=2, linestyle="dashed", alpha=0.5),
+            Line2D([0], [0], color="black", lw=2, linestyle="dotted", alpha=0.5),
+        ]
 
-        ax[2].legend(custom_lines, ["Data", "Rejected Data", "Model",
-                                    "Polynomial Term", "Feature Terms"],
-                     fontsize=fontsize*0.7)
+        ax[2].legend(
+            custom_lines,
+            ["Data", "Rejected Data", "Model", "Polynomial Term", "Feature Terms"],
+            fontsize=fontsize * 0.7,
+        )
 
     elif args.wavereg == "ir":
         labels = ["D22", "G21"]
@@ -810,24 +840,37 @@ if __name__ == "__main__":
                 bbox=props,
             )
 
-        custom_lines = [Line2D([0], [0], marker='o', color='w',
-                               markerfacecolor='k', markersize=6),
-                        Line2D([0], [0], marker='x', color='w',
-                               markerfacecolor='k', markeredgecolor='k', markersize=6),
-                        Line2D([0], [0], color="black", lw=2, linestyle="solid", alpha=0.5),
-                        Line2D([0], [0], color="black", lw=2, linestyle="dashed", alpha=0.5),
-                        Line2D([0], [0], color="black", lw=2, linestyle="dotted", alpha=0.5)]
+        custom_lines = [
+            Line2D([0], [0], marker="o", color="w", markerfacecolor="k", markersize=6),
+            Line2D(
+                [0],
+                [0],
+                marker="x",
+                color="w",
+                markerfacecolor="k",
+                markeredgecolor="k",
+                markersize=6,
+            ),
+            Line2D([0], [0], color="black", lw=2, linestyle="solid", alpha=0.5),
+            Line2D([0], [0], color="black", lw=2, linestyle="dashed", alpha=0.5),
+            Line2D([0], [0], color="black", lw=2, linestyle="dotted", alpha=0.5),
+        ]
 
-        ax[0].legend(custom_lines, ["Data", "Rejected Data", "Model",
-                                    "Powerlaw Terms", "Feature Terms"],
-                     fontsize=fontsize*0.7, loc="lower left")
+        ax[0].legend(
+            custom_lines,
+            ["Data", "Rejected Data", "Model", "Powerlaw Terms", "Feature Terms"],
+            fontsize=fontsize * 0.7,
+            loc="lower left",
+        )
 
-        custom_lines = [Line2D([0], [0], marker='o', color='w',
-                               markerfacecolor='k', markersize=6),
-                        Line2D([0], [0], color="black", lw=2, linestyle="solid", alpha=0.5)]
+        custom_lines = [
+            Line2D([0], [0], marker="o", color="w", markerfacecolor="k", markersize=6),
+            Line2D([0], [0], color="black", lw=2, linestyle="solid", alpha=0.5),
+        ]
 
-        ax[2].legend(custom_lines, ["Data", "Model"],
-                     fontsize=fontsize*0.7, loc="lower right")
+        ax[2].legend(
+            custom_lines, ["Data", "Model"], fontsize=fontsize * 0.7, loc="lower right"
+        )
 
     else:
         leg_loc = "upper center"
@@ -958,12 +1001,12 @@ if __name__ == "__main__":
                 bbox=props,
             )
 
-        custom_lines = [Line2D([0], [0], marker='o', color='w',
-                               markerfacecolor='k', markersize=6),
-                        Line2D([0], [0], color="black", lw=2, linestyle="solid", alpha=0.5)]
+        custom_lines = [
+            Line2D([0], [0], marker="o", color="w", markerfacecolor="k", markersize=6),
+            Line2D([0], [0], color="black", lw=2, linestyle="solid", alpha=0.5),
+        ]
 
-        ax[2].legend(custom_lines, ["Data", "Model"],
-                     fontsize=fontsize*0.7)
+        ax[2].legend(custom_lines, ["Data", "Model"], fontsize=fontsize * 0.7)
 
     # set the wavelength range for all the plots
     ax[3].set_xscale("log")
