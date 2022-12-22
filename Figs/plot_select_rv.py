@@ -98,6 +98,27 @@ if __name__ == "__main__":
 
     ax.legend(ncol=2, handlelength=4)
 
+    ax.text(
+        1.3,
+        5.0,
+        "Average",
+        rotation="vertical",
+        fontsize=0.7 * fontsize,
+        verticalalignment="center",
+        alpha=0.5,
+    )
+    ax.text(
+        1.47,
+        5.0,
+        "Grain Size",
+        rotation="vertical",
+        fontsize=0.7 * fontsize,
+        verticalalignment="center",
+        alpha=0.5,
+    )
+
+    ax.arrow(1.7, 9.5, 0.0, -7.0, color="k", head_width=0.1, head_length=0.3, alpha=0.5)
+
     leg = ax.get_legend()
     for k in range(4, 8):
         leg.legendHandles[k].set_color("black")

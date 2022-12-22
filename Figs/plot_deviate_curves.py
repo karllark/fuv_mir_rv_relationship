@@ -38,7 +38,7 @@ if __name__ == "__main__":
     rv = a.columns["RV"][0]
     g22mod = G22(Rv=rv)
     ax.plot(modx, g22mod(modx), label=f"R(V) = {rv:.2f}", color="black", alpha=0.5)
-    ax.legend(ncol=1, handlelength=2)
+    ax.legend(handlelength=2)
     ax.set_xlabel("")
 
     # show MW example low UV
@@ -47,6 +47,11 @@ if __name__ == "__main__":
     a = ExtData(cfile)
     a.trans_elv_alav()
     a.plot(ax, color="blue", legend_key="IUE", legend_label="MW HD283809")
+    # cfile = "data/dense/dec22_hd283809_hd003360_ext.fits"
+    # a = ExtData(cfile)
+    # a.trans_elv_alav()
+    # a.plot(ax, color="red", legend_key="IUE", legend_label="MW HD283809")
+
     rv = a.columns["RV"][0]
     g22mod = G22(Rv=rv)
     ax.plot(modx, g22mod(modx), label=f"R(V) = {rv:.2f}", color="black", alpha=0.5)
