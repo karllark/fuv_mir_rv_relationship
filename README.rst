@@ -44,14 +44,16 @@ Figures
 
 2. 1/R(V) relationship at representative wavelengths: python Figs/plot_rep_waves.py
 
-3. Fit parameters versus 1/R(V) in the UV: python Figs/plot_irv_params_waveregion.py --wavereg=uv
+3. Example 2DCORR fitting technique: python Figs/plot_fitting_example.py
 
-4. Fit parameters versus 1/R(V) in the optical: python Figs/plot_irv_params_waveregion.py --wavereg=opt
+4. Fit parameters versus 1/R(V) in the UV: python Figs/plot_irv_params_waveregion.py --wavereg=uv
 
-5. Fit parameters versus 1/R(V) in the IR: python Figs/plot_irv_params_waveregion.py --wavereg=ir
+5. Fit parameters versus 1/R(V) in the optical: python Figs/plot_irv_params_waveregion.py --wavereg=opt
 
-6. Fit parameters versus 1/R(V) from UV to IR: python Figs/plot_irv_params_waveregion.py --wavereg=all
+6. Fit parameters versus 1/R(V) in the IR: python Figs/plot_irv_params_waveregion.py --wavereg=ir
 
-7. Comparison of R(V) relationship to previous work: python Figs/plot_select_rv.py
+7. Fit parameters versus 1/R(V) from UV to IR: python Figs/plot_irv_params_waveregion.py --wavereg=all
 
-8. Example deviate curves: python Figs/plot_deviate_curves.py
+8. Comparison of R(V) relationship to previous work: python Figs/plot_select_rv.py
+
+9. Example deviate curves: python Figs/plot_deviate_curves.py

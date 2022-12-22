@@ -43,7 +43,7 @@ if __name__ == "__main__":
 
     # show MW example low UV
     ax = axs[0, 0]
-    cfile = "data/gor21_hd283809_hd064802_ext.fits"
+    cfile = "data/dense/gor21_hd283809_hd064802_ext.fits"
     a = ExtData(cfile)
     a.trans_elv_alav()
     a.plot(ax, color="blue", legend_key="IUE", legend_label="MW HD283809")
