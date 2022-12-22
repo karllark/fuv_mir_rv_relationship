@@ -92,7 +92,7 @@ if __name__ == "__main__":
     exts_gor21 = [ExtData(cfile) for cfile in files_gor21]
     psym_gor21 = "m^"
 
-    files_dec22 = glob.glob("data/decleir22/*.fits")
+    files_dec22 = glob.glob("data/dec22*.fits")
     exts_dec22 = [ExtData(cfile) for cfile in files_dec22]
     psym_dec22 = "r>"
 
@@ -162,7 +162,7 @@ if __name__ == "__main__":
     rvs_dec22 = np.zeros((n_dec22, 2))
     avs_dec22 = np.zeros((n_dec22, 2))
     for i, iext in enumerate(exts_dec22):
-        names_dec22.append(files_dec22[i].split("/")[2].split("_")[0])
+        names_dec22.append(files_dec22[i].split("_")[1].lower())
 
         av = iext.columns["AV"]
         avs_dec22[i, 0] = av[0]

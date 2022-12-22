@@ -25,7 +25,7 @@ from fit_irv import get_irvs, get_alav, get_best_fit_params
 from helpers import mcfit_cov, mcfit_cov_quad
 
 from fit_full2dcor import fit_2Dcorrelated, fit_2Dcorrelated_emcee
-from fit_full2dcor import fit_2Dcorrelated_fast, fit_2Dcorrelated_analytic_fast
+from fit_full2dcor import fit_2Dcorrelated_fast  # , fit_2Dcorrelated_analytic_fast
 
 
 def plot_exts(exts, rvs, avs, ctype, cwave, psym, label, alpha=0.5):
@@ -232,11 +232,8 @@ if __name__ == "__main__":
     laby = r"$A(\lambda)/A(V)$"
 
     fontsize = 12
-
     font = {"size": fontsize}
-
     plt.rc("font", **font)
-
     plt.rc("lines", linewidth=1)
     plt.rc("axes", linewidth=2)
     plt.rc("xtick.major", width=2)
@@ -441,7 +438,8 @@ if __name__ == "__main__":
             ax[i].plot(
                 rvs_dec22[:, 0], oexts[:, 0], psym_dec22, fillstyle="none", label="D22"
             )
-        ax[i].legend(title=f"{repwaves[rname]}", ncol=2)
+        leg = ax[i].legend(ncol=2, fontsize=0.8 * fontsize)
+        leg.set_title(f"{repwaves[rname]}", prop={"size": 0.8 * fontsize})
 
         # save the data
         a = Table()
@@ -548,7 +546,9 @@ if __name__ == "__main__":
                 bparams = get_best_fit_params(fit2d_line.sampler)
                 print(bparams)
 
-                samples = fit2d_line.sampler.get_chain(flat=True, discard=int(0.1 * nsteps))
+                samples = fit2d_line.sampler.get_chain(
+                    flat=True, discard=int(0.1 * nsteps)
+                )
 
                 d2slopes = np.mean(samples[:, 0])
                 d2slopes_unc = np.std(samples[:, 0])
@@ -573,9 +573,14 @@ if __name__ == "__main__":
 
             if do_linmix:
 
-                lm = linmix.LinMix(xvals[gvals], yvals[gvals],
-                                   xvals_unc[gvals], yvals_unc[gvals],
-                                   covs[:, 0, 1], K=2)
+                lm = linmix.LinMix(
+                    xvals[gvals],
+                    yvals[gvals],
+                    xvals_unc[gvals],
+                    yvals_unc[gvals],
+                    covs[:, 0, 1],
+                    K=2,
+                )
                 lm.run_mcmc(silent=False)
                 print("****")
                 intercept = np.mean(lm.chain[:]["alpha"])
