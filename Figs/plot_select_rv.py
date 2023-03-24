@@ -10,6 +10,7 @@ from helpers import G22
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
+    parser.add_argument("--dev", help="plot deviations", action="store_true")
     parser.add_argument("--png", help="save figure as a png file", action="store_true")
     parser.add_argument("--pdf", help="save figure as a pdf file", action="store_true")
     args = parser.parse_args()
@@ -34,8 +35,13 @@ if __name__ == "__main__":
     rvs = [2.5, 3.1, 4.0, 5.5]
     colors = ["tomato", "olivedrab", "cornflowerblue", "blueviolet"]
     for rv, ccol in zip(rvs, colors):
+        print(f"R(V) = {rv}")
         g22mod = G22(Rv=rv)
-        ax.plot(modx, g22mod(modx), label=f"R(V) = {rv:.1f}", color=ccol)
+        if args.dev:
+            ydata = modx * 0.0
+        else:
+            ydata = g22mod(modx)
+        ax.plot(modx, ydata, label=f"R(V) = {rv:.1f}", color=ccol)
 
         if rv == 5.5:
             ltxt = ["CCM89", "GCC09", "F19", "D22"]
@@ -43,9 +49,17 @@ if __name__ == "__main__":
             ltxt = [None, None, None, None]
 
         ccm89mod = CCM89(Rv=rv)
+        # deviations
+        dev = np.absolute(ccm89mod(modx2) - g22mod(modx2)) / g22mod(modx2)
+        print("CCM89 to G23", max(dev), np.average(dev))
+
+        if args.dev:
+            ydata = dev
+        else:
+            ydata = ccm89mod(modx2)
         ax.plot(
             modx2,
-            ccm89mod(modx2),
+            ydata,
             linestyle="dashed",
             color=ccol,
             alpha=0.5,
@@ -53,9 +67,17 @@ if __name__ == "__main__":
         )
 
         gcc09mod = GCC09(Rv=rv)
+        # deviations
+        dev = np.absolute(gcc09mod(modx4) - g22mod(modx4)) / g22mod(modx4)
+        print("GCC09 to G23", max(dev), np.average(dev))
+
+        if args.dev:
+            ydata = dev
+        else:
+            ydata = gcc09mod(modx4)
         ax.plot(
             modx4,
-            gcc09mod(modx4),
+            ydata,
             linestyle="dashdot",
             color=ccol,
             alpha=0.5,
@@ -63,9 +85,17 @@ if __name__ == "__main__":
         )
 
         f19mod = F19(Rv=rv)
+        # deviations
+        dev = np.absolute(f19mod(modx2) - g22mod(modx2)) / g22mod(modx2)
+        print("F19 to G23", max(dev), np.average(dev))
+
+        if args.dev:
+            ydata = dev
+        else:
+            ydata = f19mod(modx2)
         ax.plot(
             modx2,
-            f19mod(modx2),
+            ydata,
             linestyle="dotted",
             color=ccol,
             alpha=0.5,
@@ -73,9 +103,17 @@ if __name__ == "__main__":
         )
 
         d22mod = D22(Rv=rv)
+        # deviations
+        dev = np.absolute(d22mod(modx3) - g22mod(modx3)) / g22mod(modx3)
+        print("D22 to G23", max(dev), np.average(dev))
+
+        if args.dev:
+            ydata = dev
+        else:
+            ydata = d22mod(modx3)
         ax.plot(
             modx3,
-            d22mod(modx3),
+            ydata,
             linestyle=(0, (3, 1, 1, 1, 1, 1)),
             color=ccol,
             alpha=0.5,
@@ -83,7 +121,8 @@ if __name__ == "__main__":
         )
 
     ax.set_xscale("log")
-    ax.set_yscale("log")
+    if not args.dev:
+        ax.set_yscale("log")
 
     ax.xaxis.set_major_formatter(ScalarFormatter())
     ax.xaxis.set_minor_formatter(ScalarFormatter())
@@ -94,7 +133,10 @@ if __name__ == "__main__":
     ax.yaxis.set_major_formatter(ScalarFormatter())
 
     ax.set_xlabel(r"$\lambda$ [$\mu$m]")
-    ax.set_ylabel(r"$A(\lambda)/A(V)$")
+    if args.dev:
+        ax.set_ylabel(r"fractional deviation")
+    else:
+        ax.set_ylabel(r"$A(\lambda)/A(V)$")
 
     ax.legend(ncol=2, handlelength=4)
 
@@ -117,7 +159,8 @@ if __name__ == "__main__":
         alpha=0.5,
     )
 
-    ax.arrow(1.7, 9.5, 0.0, -7.0, color="k", head_width=0.1, head_length=0.3, alpha=0.5)
+    if not args.dev:
+        ax.arrow(1.7, 9.5, 0.0, -7.0, color="k", head_width=0.1, head_length=0.3, alpha=0.5)
 
     leg = ax.get_legend()
     for k in range(4, 8):
@@ -126,6 +169,8 @@ if __name__ == "__main__":
     fig.tight_layout()
 
     fname = "fuv_mir_select_rv"
+    if args.dev:
+        fname = f"{fname}_dev"
     if args.png:
         fig.savefig(f"{fname}.png")
     elif args.pdf:
