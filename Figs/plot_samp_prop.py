@@ -18,7 +18,9 @@ def plot_props(ax, avs, rvs, psym, label):
     print(label, len(avs[:, 0]))
     print("AV", np.min(avs[:, 0]), np.max(avs[:, 0]))
     print("RV", np.min(rvs[:, 0]), np.max(rvs[:, 0]))
-    yerr = (1 / rvs[:, 0]) * (rvs[:, 1] / rvs[:, 0])
+    tindxs, = np.where(rvs[:, 0] > 4.0)
+    print("# RV > 4:", len(tindxs))
+    # yerr = (1 / rvs[:, 0]) * (rvs[:, 1] / rvs[:, 0])
     # ax.errorbar(
     #     1 / rvs[:, 0] - 1 / 3.1,
     #     avs[:, 0],
