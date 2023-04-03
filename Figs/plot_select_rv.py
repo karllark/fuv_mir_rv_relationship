@@ -55,7 +55,7 @@ if __name__ == "__main__":
 
         ccm89mod = CCM89(Rv=rv)
         # deviations
-        dev = np.absolute(ccm89mod(modx2) - g22mod(modx2)) / g22mod(modx2)
+        dev = (ccm89mod(modx2) - g22mod(modx2)) / g22mod(modx2)
         print("CCM89 to G23", np.max(dev), np.average(dev))
 
         ydata = ccm89mod(modx2)
@@ -70,16 +70,16 @@ if __name__ == "__main__":
         ax[1].plot(
             modx2,
             dev,
-            linestyle="dashed",
+            # linestyle="dashed",
             color=ccol,
             alpha=0.8,
-            label=f"ave = {np.average(dev):4.2f}, max = {np.max(dev):4.2f}   (R(V) = {rv:3.1f})",
+            label=f"ave = {np.average(dev):4.2f}, max = {np.max(np.absolute(dev)):4.2f}   (R(V) = {rv:3.1f})",
         )
-        ax[1].text(0.1, 0.5, "CCM89", alpha=0.5)
+        ax[1].text(0.1, 0.3, "CCM89", alpha=0.5)
 
         gcc09mod = GCC09(Rv=rv)
         # deviations
-        dev = np.absolute(gcc09mod(modx4) - g22mod(modx4)) / g22mod(modx4)
+        dev = (gcc09mod(modx4) - g22mod(modx4)) / g22mod(modx4)
         print("GCC09 to G23", max(dev), np.average(dev))
 
         ydata = gcc09mod(modx4)
@@ -94,16 +94,16 @@ if __name__ == "__main__":
         ax[2].plot(
             modx4,
             dev,
-            linestyle="dashdot",
+            # linestyle="dashdot",
             color=ccol,
             alpha=0.8,
-            label=f"ave = {np.average(dev):4.2f}, max = {np.max(dev):4.2f}   (R(V) = {rv:3.1f})",
+            label=f"ave = {np.average(dev):4.2f}, max = {np.max(np.absolute(dev)):4.2f}   (R(V) = {rv:3.1f})",
         )
-        ax[2].text(0.1, 0.5, "GCC09", alpha=0.5)
+        ax[2].text(0.1, 0.3, "GCC09", alpha=0.5)
 
         f19mod = F19(Rv=rv)
         # deviations
-        dev = np.absolute(f19mod(modx2) - g22mod(modx2)) / g22mod(modx2)
+        dev = (f19mod(modx2) - g22mod(modx2)) / g22mod(modx2)
         print("F19 to G23", max(dev), np.average(dev))
 
         ydata = f19mod(modx2)
@@ -118,16 +118,16 @@ if __name__ == "__main__":
         ax[3].plot(
             modx2,
             dev,
-            linestyle="dotted",
+            # linestyle="dotted",
             color=ccol,
             alpha=0.8,
-            label=f"ave = {np.average(dev):4.2f}, max = {np.max(dev):4.2f}   (R(V) = {rv:3.1f})",
+            label=f"ave = {np.average(dev):4.2f}, max = {np.max(np.absolute(dev)):4.2f}   (R(V) = {rv:3.1f})",
         )
-        ax[3].text(0.1, 0.5, "F19", alpha=0.5)
+        ax[3].text(0.1, 0.3, "F19", alpha=0.5)
 
         d22mod = D22(Rv=rv)
         # deviations
-        dev = np.absolute(d22mod(modx3) - g22mod(modx3)) / g22mod(modx3)
+        dev = (d22mod(modx3) - g22mod(modx3)) / g22mod(modx3)
         print("D22 to G23", max(dev), np.average(dev))
 
         ydata = d22mod(modx3)
@@ -142,12 +142,12 @@ if __name__ == "__main__":
         ax[4].plot(
             modx3,
             dev,
-            linestyle=(0, (3, 1, 1, 1, 1, 1)),
+            # linestyle=(0, (3, 1, 1, 1, 1, 1)),
             color=ccol,
             alpha=0.8,
-            label=f"ave = {np.average(dev):4.2f}, max = {np.max(dev):4.2f}   (R(V) = {rv:3.1f})",
+            label=f"ave = {np.average(dev):4.2f}, max = {np.max(np.absolute(dev)):4.2f}   (R(V) = {rv:3.1f})",
         )
-        ax[4].text(0.1, 0.5, "D22", alpha=0.5)
+        ax[4].text(0.1, 0.3, "D22", alpha=0.5)
 
     tax = ax[4]
     tax.set_xlabel(r"$\lambda$ [$\mu$m]")
@@ -157,12 +157,13 @@ if __name__ == "__main__":
     xticks = [0.1, 0.2, 0.3, 0.5, 0.7, 1.0, 2.0, 3.0, 5.0, 7.0, 10.0, 20.0, 30.0]
     tax.set_xticks(xticks, minor=True)
     tax.tick_params(axis="x", which="minor", labelsize=fontsize * 0.8)
-    tax.set_xlim(0.08, 35.)
+    tax.set_xlim(0.08, 35.0)
 
     ax[0].set_yscale("log")
     for k in range(1, 5):
+        ax[k].plot([0.09, 4.0], [0.0, 0.0], "k--", alpha=0.5)
         ax[k].legend(fontsize=0.67 * fontsize, frameon=False, handlelength=2)
-        ax[k].set_ylim(0.0, 0.75)
+        ax[k].set_ylim(-0.75, 0.75)
 
     ax[0].yaxis.set_major_formatter(ScalarFormatter())
 
