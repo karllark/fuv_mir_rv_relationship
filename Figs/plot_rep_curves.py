@@ -5,7 +5,7 @@ import numpy as np
 import astropy.units as u
 
 from measure_extinction.extdata import ExtData
-from dust_extinction.parameter_averages import CCM89, F19, GCC09
+from dust_extinction.parameter_averages import CCM89, F19, GCC09, G23
 
 from helpers import G22, G22MC, G22HF, G22LFnoweight
 
@@ -66,12 +66,12 @@ if __name__ == "__main__":
                 iext.plot(ax, color=ccolor, alpha=0.2)
     print(sumrv / nrv)
 
-    modx = np.logspace(np.log10(0.091), np.log10(34.0), 1000) * u.micron
+    modx = np.logspace(np.log10(0.0912), np.log10(32.0), 1000) * u.micron
     modx2 = np.logspace(np.log10(0.115), np.log10(3.0), 1000) * u.micron
     rvs = [args.rv - args.drv, args.rv, args.rv + args.drv]
     for rv in rvs:
-        g22mod = G22(Rv=rv)
-        ax.plot(modx, g22mod(modx), color="black", lw=4, alpha=0.5, label="G22")
+        g22mod = G23(Rv=rv)
+        ax.plot(modx, g22mod(modx), color="black", lw=4, alpha=0.5, label="G23")
 
         # g22lfmod = G22LFnoweight(Rv=rv)
         # ax.plot(modx, g22lfmod(modx), color="magenta", alpha=0.5, linestyle="dotted", lw=2, label="G22LF")

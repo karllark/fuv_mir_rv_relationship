@@ -95,7 +95,7 @@ if __name__ == "__main__":
         a["alav"][8:-3],
         color="blue",
         linestyle="solid",
-        label="SMC Bar Aveage",
+        label="SMC Bar Average",
     )
     ax.plot(1.0 / a["wave"][0:8], a["alav"][0:8], "bo", mfc="white")
 

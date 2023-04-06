@@ -5,9 +5,7 @@ from matplotlib.ticker import ScalarFormatter
 import numpy as np
 import astropy.units as u
 
-from dust_extinction.parameter_averages import CCM89, F19, D22, GCC09
-
-from helpers import G22
+from dust_extinction.parameter_averages import CCM89, F19, D22, GCC09, G23
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -36,15 +34,15 @@ if __name__ == "__main__":
 
     plt.subplots_adjust(wspace=0.0, hspace=0.0)
 
-    modx = np.logspace(np.log10(0.091), np.log10(32.0), 1000) * u.micron
+    modx = np.logspace(np.log10(0.0912), np.log10(32.0), 1000) * u.micron
     modx2 = np.logspace(np.log10(0.115), np.log10(3.0), 1000) * u.micron
     modx3 = np.logspace(np.log10(0.8), np.log10(4.0), 1000) * u.micron
-    modx4 = np.logspace(np.log10(0.091), np.log10(0.3), 1000) * u.micron
+    modx4 = np.logspace(np.log10(0.0912), np.log10(0.3), 1000) * u.micron
     rvs = [2.5, 3.1, 4.0, 5.5]
     colors = ["tomato", "olivedrab", "cornflowerblue", "blueviolet"]
     for rv, ccol in zip(rvs, colors):
         print(f"R(V) = {rv}")
-        g22mod = G22(Rv=rv)
+        g22mod = G23(Rv=rv)
         ydata = g22mod(modx)
         ax[0].plot(modx, ydata, label=f"R(V) = {rv:.1f}", color=ccol)
 
@@ -175,7 +173,7 @@ if __name__ == "__main__":
 
     ax[0].text(
         1.3,
-        4.0,
+        5.0,
         "Average",
         rotation="vertical",
         fontsize=0.7 * fontsize,
@@ -184,7 +182,7 @@ if __name__ == "__main__":
     )
     ax[0].text(
         1.47,
-        4.0,
+        5.0,
         "Grain Size",
         rotation="vertical",
         fontsize=0.7 * fontsize,
@@ -193,7 +191,7 @@ if __name__ == "__main__":
     )
 
     ax[0].arrow(
-        1.7, 9.5, 0.0, -7.5, color="k", head_width=0.1, head_length=0.3, alpha=0.5
+        1.7, 10.0, 0.0, -7.5, color="k", head_width=0.1, head_length=0.3, alpha=0.5
     )
 
     leg = ax[0].get_legend()
