@@ -6,7 +6,7 @@ import numpy as np
 from measure_extinction.extdata import ExtData
 
 
-def plot_props(ax, avs, rvs, psym, label):
+def plot_props(ax, avs, rvs, names, psym, label):
     ax.plot(
         1 / rvs[:, 0] - (1 / 3.1),
         avs[:, 0],
@@ -15,11 +15,27 @@ def plot_props(ax, avs, rvs, psym, label):
         label=label,
         alpha=0.75,
     )
+    print("****")
     print(label, len(avs[:, 0]))
     print("AV", np.min(avs[:, 0]), np.max(avs[:, 0]))
     print("RV", np.min(rvs[:, 0]), np.max(rvs[:, 0]))
-    tindxs, = np.where(rvs[:, 0] > 4.0)
-    print("# RV > 4:", len(tindxs))
+
+    lowRv = 2.5
+    highRv = 5.0
+    ebvs = avs[:, 0] / rvs[:, 0]
+
+    tindxs, = np.where((rvs[:, 0] < lowRv) & (ebvs > 0.3) & (rvs[:, 0] > 1.))
+    print(f"# RV < {lowRv}:", len(tindxs))
+    print(np.array(names)[tindxs])
+    print(np.array(rvs[:, 0])[tindxs])
+    print(ebvs[tindxs])
+
+    tindxs, = np.where((rvs[:, 0] > highRv) & (ebvs > 0.3))
+    print(f"# RV > {highRv}:", len(tindxs))
+    print(np.array(names)[tindxs])
+    print(np.array(rvs[:, 0])[tindxs])
+    print(ebvs[tindxs])
+    print("****")
     # yerr = (1 / rvs[:, 0]) * (rvs[:, 1] / rvs[:, 0])
     # ax.errorbar(
     #     1 / rvs[:, 0] - 1 / 3.1,
@@ -114,17 +130,19 @@ if __name__ == "__main__":
         rvs_gor09[i, 0] = irv[0]
         rvs_gor09[i, 1] = irv[1]
 
-    # n_val04 = len(files_val04)
-    # rvs_val04 = np.zeros((n_val04, 2))
-    # avs_val04 = np.zeros((n_val04, 2))
-    # for i, iext in enumerate(exts_val04):
-    #     av = iext.columns["AV"]
-    #     avs_val04[i, 0] = av[0]
-    #     avs_val04[i, 1] = av[1]
-    #
-    #     irv = iext.columns["RV"]
-    #     rvs_val04[i, 0] = irv[0]
-    #     rvs_val04[i, 1] = irv[1]
+    n_val04 = len(files_val04)
+    names_val04 = []
+    rvs_val04 = np.zeros((n_val04, 2))
+    avs_val04 = np.zeros((n_val04, 2))
+    for i, iext in enumerate(exts_val04):
+        names_val04.append(hname(files_val04[i].split("_")[1].lower()))
+        av = iext.columns["AV"]
+        avs_val04[i, 0] = av[0]
+        avs_val04[i, 1] = av[1]
+
+        irv = iext.columns["RV"]
+        rvs_val04[i, 0] = irv[0]
+        rvs_val04[i, 1] = irv[1]
 
     # get R(V) values
     n_fit19 = len(files_fit19)
@@ -190,17 +208,17 @@ if __name__ == "__main__":
     all_tags = ["GCC09", "F19", "G21", "D22"]
     all_names = [names_gor09, names_fit19, names_gor21, names_dec22]
 
-    plot_props(ax, avs_gor09, rvs_gor09, psym_gor09, "GCC09")
+    plot_props(ax, avs_gor09, rvs_gor09, names_gor09, psym_gor09, "GCC09")
     for i, csamp in enumerate(all_names):
         print(all_tags[i], check_overlap(names_gor09, csamp))
-    # plot_props(ax, avs_val04, rvs_val04, psym_val04, "V04")
-    plot_props(ax, avs_fit19, rvs_fit19, psym_fit19, "F19")
+    plot_props(ax, avs_val04, rvs_val04, names_val04, psym_val04, "V04")
+    plot_props(ax, avs_fit19, rvs_fit19, names_fit19, psym_fit19, "F19")
     for i, csamp in enumerate(all_names):
         print(all_tags[i], check_overlap(names_fit19, csamp))
-    plot_props(ax, avs_gor21, rvs_gor21, psym_gor21, "G21")
+    plot_props(ax, avs_gor21, rvs_gor21, names_gor21, psym_gor21, "G21")
     for i, csamp in enumerate(all_names):
         print(all_tags[i], check_overlap(names_gor21, csamp))
-    plot_props(ax, avs_dec22, rvs_dec22, psym_dec22, "D22")
+    plot_props(ax, avs_dec22, rvs_dec22, names_dec22, psym_dec22, "D22")
     for i, csamp in enumerate(all_names):
         print(all_tags[i], check_overlap(names_dec22, csamp))
 

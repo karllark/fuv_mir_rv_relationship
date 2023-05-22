@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from math import sqrt, cos, sin
 from matplotlib.patches import Polygon
+from matplotlib.patches import Rectangle
 from scipy.linalg import eigh
 
 import astropy.units as u
@@ -106,6 +107,27 @@ def draw_ellipses(ax, xs, ys, covs, num_sigma=1, sigmas=None, **kwargs):
         ax.add_patch(cov_ellipse(x, y, cov, num_sigma, **kwargs))
 
 
+def cut_by_ebv(exts, rvs, avs, names, ebv_cut):
+    """
+    Remove all sightlines below the ebv cut
+    """
+    gvals, = np.where((avs[:, 0] / rvs[:, 0]) > ebv_cut)
+    return np.array(exts)[gvals], rvs[gvals, :], avs[gvals, :], list(np.array(names)[gvals])
+
+
+def cut_dups(names, exts, rvs, avs, dupnames):
+    """
+    Remove all that are in names
+    """
+    gvals = []
+    for k, cname in enumerate(names):
+        if cname not in dupnames:
+            gvals.append(k)
+    gvals = np.array(gvals)
+
+    return np.array(exts)[gvals], rvs[gvals, :], avs[gvals, :]
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--rv", help="plot versus R(V)", action="store_true")
@@ -113,6 +135,8 @@ if __name__ == "__main__":
         "--incval04", help="include Valencic et al. 2004", action="store_true"
     )
     parser.add_argument("--curve", help="UV only with quad", action="store_true")
+    parser.add_argument("--prop", help="for high/low R(V) proposal", action="store_true")
+    parser.add_argument("--cut_dups", help="cut duplicates in latter samples", action="store_true")
     # parser.add_argument("--elvebv", help="plot versus E(l-V)/E(B-V)", action="store_true")
     parser.add_argument("--png", help="save figure as a png file", action="store_true")
     parser.add_argument("--pdf", help="save figure as a pdf file", action="store_true")
@@ -121,6 +145,11 @@ if __name__ == "__main__":
     # test angles given correlation coefficients
     # print(45.0 - np.rad2deg(np.arccos(np.array([-1.0, -0.5, 0.0, 0.5, 1.0]))) / 2.0)
     # exit()
+
+    if args.prop:
+        ebv_cut = 0.3
+    else:
+        ebv_cut = 0.0
 
     # read in all the extinction curves
     if args.incval04:
@@ -146,9 +175,12 @@ if __name__ == "__main__":
 
     # get R(V) values
     n_gor09 = len(files_gor09)
+    names_gor09 = []
     rvs_gor09 = np.zeros((n_gor09, 2))
     avs_gor09 = np.zeros((n_gor09, 2))
     for i, iext in enumerate(exts_gor09):
+        names_gor09.append(files_gor09[i].split("_")[1].lower())
+
         av = iext.columns["AV"]
         avs_gor09[i, 0] = av[0]
         avs_gor09[i, 1] = av[1]
@@ -161,9 +193,12 @@ if __name__ == "__main__":
 
     if args.incval04:
         n_val04 = len(files_val04)
+        names_val04 = []
         rvs_val04 = np.zeros((n_val04, 2))
         avs_val04 = np.zeros((n_val04, 2))
         for i, iext in enumerate(exts_val04):
+            names_val04.append(files_val04[i].split("_")[1].lower())
+
             av = iext.columns["AV"]
             avs_val04[i, 0] = av[0]
             avs_val04[i, 1] = av[1]
@@ -175,9 +210,11 @@ if __name__ == "__main__":
 
     # get R(V) values
     n_fit19 = len(files_fit19)
+    names_fit19 = []
     rvs_fit19 = np.zeros((n_fit19, 2))
     avs_fit19 = np.zeros((n_fit19, 2))
     for i, iext in enumerate(exts_fit19):
+        names_fit19.append(files_fit19[i].split("_")[1].lower())
         av = iext.columns["AV"]
         avs_fit19[i, 0] = av[0]
         avs_fit19[i, 1] = av[1]
@@ -189,9 +226,12 @@ if __name__ == "__main__":
 
     # get R(V) values
     n_gor21 = len(files_gor21)
+    names_gor21 = []
     rvs_gor21 = np.zeros((n_gor21, 2))
     avs_gor21 = np.zeros((n_gor21, 2))
     for i, iext in enumerate(exts_gor21):
+        names_gor21.append(files_gor21[i].split("_")[1].lower())
+
         av = iext.columns["AV"]
         avs_gor21[i, 0] = av[0]
         avs_gor21[i, 1] = 0.5 * (av[1] + av[2])
@@ -203,9 +243,12 @@ if __name__ == "__main__":
 
     # get R(V) values
     n_dec22 = len(files_dec22)
+    names_dec22 = []
     rvs_dec22 = np.zeros((n_dec22, 2))
     avs_dec22 = np.zeros((n_dec22, 2))
     for i, iext in enumerate(exts_dec22):
+        names_dec22.append(files_dec22[i].split("_")[1].lower())
+
         av = iext.columns["AV"]
         avs_dec22[i, 0] = av[0]
         avs_dec22[i, 1] = 0.5 * (av[1] + av[2])
@@ -214,6 +257,40 @@ if __name__ == "__main__":
         rvs_dec22[i, 0] = irv[0]
         rvs_dec22[i, 1] = 0.5 * (irv[1] + irv[2])
         iext.trans_elv_alav()
+
+    if ebv_cut > 0.0:
+        print(f"cutting all E(B-V) curves < {ebv_cut}")
+        if args.incval04:
+            exts_val04, rvs_val04, avs_val04, names_val04 = cut_by_ebv(exts_val04, rvs_val04, avs_val04, names_val04, ebv_cut)
+            print(f"val04: from {n_val04} to {len(exts_val04)}")
+        exts_gor09, rvs_gor09, avs_gor09, names_gor09 = cut_by_ebv(exts_gor09, rvs_gor09, avs_gor09, names_gor09, ebv_cut)
+        print(f"gor09: from {n_gor09} to {len(exts_gor09)}")
+        exts_fit19, rvs_fit19, avs_fit19, names_fit19 = cut_by_ebv(exts_fit19, rvs_fit19, avs_fit19, names_fit19, ebv_cut)
+        print(f"fit19: from {n_fit19} to {len(exts_fit19)}")
+        exts_gor21, rvs_gor21, avs_gor21, names_gor21 = cut_by_ebv(exts_gor21, rvs_gor21, avs_gor21, names_gor21, ebv_cut)
+        print(f"gor21: from {n_gor21} to {len(exts_gor21)}")
+        exts_dec22, rvs_dec22, avs_dec22, names_dec22 = cut_by_ebv(exts_dec22, rvs_dec22, avs_dec22, names_dec22, ebv_cut)
+        print(f"dec22: from {n_dec22} to {len(exts_dec22)}")
+
+    if args.cut_dups:
+        print("cutting duplicate curves present in latter samples")
+        if args.incval04:
+            n_val04 = len(exts_val04)
+            exts_val04, rvs_val04, avs_val04 = cut_dups(names_val04, exts_val04, rvs_val04, avs_val04,
+                                                        names_gor09 + names_fit19 + names_gor21 + names_dec22)
+            print(f"val04: from {n_val04} to {len(exts_val04)}")
+        n_gor09 = len(exts_gor09)
+        exts_gor09, rvs_gor09, avs_gor09 = cut_dups(names_gor09, exts_gor09, rvs_gor09, avs_gor09,
+                                                    names_fit19 + names_gor21 + names_dec22)
+        print(f"gor09: from {n_gor09} to {len(exts_gor09)}")
+        n_fit19 = len(exts_fit19)
+        exts_fit19, rvs_fit19, avs_fit19 = cut_dups(names_fit19, exts_fit19, rvs_fit19, avs_fit19,
+                                                    names_gor21 + names_dec22)
+        print(f"fit19: from {n_fit19} to {len(exts_fit19)}")
+        n_gor21 = len(exts_gor21)
+        exts_gor21, rvs_gor21, avs_gor21 = cut_dups(names_gor21, exts_gor21, rvs_gor21, avs_gor21,
+                                                    names_dec22)
+        print(f"gor21: from {n_gor21} to {len(exts_gor21)}")
 
     if args.rv:
         labx = "$R(V)$"
@@ -227,7 +304,7 @@ if __name__ == "__main__":
         rvs_dec22 = get_irvs(rvs_dec22)
         labx = "$1/R(V)$ - 1/3.1"
         # xrange = np.array([1.0 / 6.5, 1.0 / 2.0]) - 1 / 3.1
-        xrange = np.array([1.0 / 6.5, 1.0 / 2.25]) - 1 / 3.1
+        xrange = np.array([1.0 / 6.5, 1.0 / 2.0]) - 1 / 3.1
 
     laby = r"$A(\lambda)/A(V)$"
 
@@ -247,6 +324,7 @@ if __name__ == "__main__":
 
     nsteps = 1000
 
+    leg_fontsize = 0.8 * fontsize
     if args.curve:
         fig, fax = plt.subplots(
             nrows=1,
@@ -261,6 +339,22 @@ if __name__ == "__main__":
         }
         nsteps = 10
         do_quad = True
+        ax = fax.flatten()
+    elif args.prop:
+        fig, fax = plt.subplots(
+            nrows=1,
+            ncols=1,
+            figsize=(6, 6),
+            sharex=True,  # constrained_layout=True
+        )
+
+        repwaves = {
+            "IUE1": 0.15 * u.micron,
+        }
+        nsteps = 10
+        ax = [fax]
+        leg_fontsize = fontsize
+        xrange = np.array([1.0 / 8, 1.0 / 2.1]) - 1 / 3.1
     else:
         fig, fax = plt.subplots(
             nrows=3,
@@ -285,8 +379,7 @@ if __name__ == "__main__":
             # "IRS1": 6.0 * u.micron,
             "IRS2": 15.0 * u.micron,
         }
-
-    ax = fax.flatten()
+        ax = fax.flatten()
 
     for i, rname in enumerate(repwaves.keys()):
         xvals = None
@@ -404,7 +497,6 @@ if __name__ == "__main__":
                     repwaves[rname],
                     psym_val04,
                     "V04",
-                    alpha=0.0,
                 )
                 xvals = np.concatenate((xvals, xvals5))
                 xvals_unc = np.concatenate((xvals_unc, xvals5_unc))
@@ -438,8 +530,8 @@ if __name__ == "__main__":
             ax[i].plot(
                 rvs_dec22[:, 0], oexts[:, 0], psym_dec22, fillstyle="none", label="D22"
             )
-        leg = ax[i].legend(ncol=2, fontsize=0.8 * fontsize)
-        leg.set_title(f"{repwaves[rname]}", prop={"size": 0.8 * fontsize})
+        leg = ax[i].legend(ncol=2, fontsize=leg_fontsize)
+        leg.set_title(f"{repwaves[rname]}", prop={"size": leg_fontsize})
 
         # save the data
         a = Table()
@@ -708,19 +800,46 @@ if __name__ == "__main__":
     new_ticks = 1 / axis_rvs - 1 / 3.1
     new_ticks_labels = ["%.1f" % z for z in axis_rvs]
 
+    if args.prop:
+        x1 = 1/2.5 - 1/3.1
+        y1 = 2.
+        y2 = 5.2
+        ax[0].plot([x1, x1], [y1, y2], linewidth=4, color="black", alpha=0.5)
+        ax[0].text(x1 + 0.005, 4.5, "R(V) < 2.5", ha="left")
+
+        x1 = 1/5.0 - 1/3.1
+        y1 = 1.
+        y2 = 2.5
+        ax[0].plot([x1, x1], [y1, y2], linewidth=4, color="black", alpha=0.5)
+        ax[0].text(x1 - 0.005, 2.3, "R(V) > 5.0", ha="right")
+
     if args.curve:
         for i in range(2):
             ax[i].set_xlabel(labx)
 
             if not args.rv:
                 # add 2nd x-axis with R(V) values
-                tax = fax[i].twiny()
-                tax.set_xlim(fax[i].get_xlim())
+                tax = ax[i].twiny()
+                tax.set_xlim(ax[i].get_xlim())
                 tax.set_xticks(new_ticks)
                 tax.set_xticklabels(new_ticks_labels)
                 tax.set_xlabel(r"$R(V)$")
 
         for i in range(3):
+            ax[0].set_ylabel(laby)
+    elif args.prop:
+        for i in range(1):
+            ax[i].set_xlabel(labx)
+
+            if not args.rv:
+                # add 2nd x-axis with R(V) values
+                tax = ax[i].twiny()
+                tax.set_xlim(ax[i].get_xlim())
+                tax.set_xticks(new_ticks)
+                tax.set_xticklabels(new_ticks_labels)
+                tax.set_xlabel(r"$R(V)$")
+
+        for i in range(1):
             ax[0].set_ylabel(laby)
     else:
         for i in range(3):
@@ -755,6 +874,8 @@ if __name__ == "__main__":
         fname = f"{fname}_rv"
     if args.curve:
         fname = f"{fname}_curvature"
+    elif args.prop:
+        fname = f"{fname}_prop"
     if args.png:
         fig.savefig(f"{fname}.png")
     elif args.pdf:
