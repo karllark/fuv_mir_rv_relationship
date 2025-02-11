@@ -3,6 +3,8 @@ from scipy.special import comb
 from numpy.random import default_rng
 import astropy.units as u
 
+import warnings
+
 from astropy.modeling import Fittable1DModel, Parameter
 from astropy.modeling.models import Drude1D, Polynomial1D, PowerLaw1D
 
@@ -15,12 +17,16 @@ from astropy.modeling.fitting import (
 )
 
 # from dust_extinction.shapes import G21
-from dust_extinction.helpers import _get_x_in_wavenumbers, _test_valid_x_range
+from dust_extinction.helpers import  _test_valid_x_range
 from dust_extinction.baseclasses import BaseExtRvModel
 from dust_extinction.shapes import _modified_drude, FM90
 
 
 x_range_G22 = [1.0 / 45.0, 1.0 / 0.08]
+
+
+class SpectralUnitsWarning(UserWarning):
+    pass
 
 
 def smoothstep(x, x_min=0, x_max=1, N=1):
@@ -33,6 +39,38 @@ def smoothstep(x, x_min=0, x_max=1, N=1):
     result *= x ** (N + 1)
 
     return result
+
+
+def _get_x_in_wavenumbers(in_x):
+    """
+    Convert input x to wavenumber given x has units.
+    Otherwise, assume x is in waveneumbers and issue a warning to this effect.
+    Parameters
+    ----------
+    in_x : astropy.quantity or simple floats
+        x values
+    Returns
+    -------
+    x : floats
+        input x values in wavenumbers w/o units
+    """
+    # handles the case where x is a scaler
+    in_x = np.atleast_1d(in_x)
+
+    # check if in_x is an astropy quantity, if not issue a warning
+    if not isinstance(in_x, u.Quantity):
+        warnings.warn(
+            "x has no units, assuming x units are inverse microns", SpectralUnitsWarning
+        )
+
+    # convert to wavenumbers (1/micron) if x input in units
+    # otherwise, assume x in appropriate wavenumber units
+    with u.add_enabled_equivalencies(u.spectral()):
+        x_quant = u.Quantity(in_x, 1.0 / u.micron, dtype=np.float64)
+
+    # strip the quantity to avoid needing to add units to all the
+    #    polynomical coefficients
+    return x_quant.value
 
 
 class G22(BaseExtRvModel):

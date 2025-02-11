@@ -31,10 +31,10 @@ def plot_irv_ssamp(ax, itab, label, color="k", simpfit=False, inst=None, ncol=2)
 
     # set to NAN so they are not plotted
     bvals = itab["npts"] == 0
-    itab["hfslopes"][bvals] = np.NAN
-    itab["hfintercepts"][bvals] = np.NAN
-    itab["hfsigmas"][bvals] = np.NAN
-    itab["hfrmss"][bvals] = np.NAN
+    itab["hfslopes"][bvals] = np.nan
+    itab["hfintercepts"][bvals] = np.nan
+    itab["hfsigmas"][bvals] = np.nan
+    itab["hfrmss"][bvals] = np.nan
     gvals = itab["npts"] >= 0
     for i in range(ncol):
         if simpfit:
