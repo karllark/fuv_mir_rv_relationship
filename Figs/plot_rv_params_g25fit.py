@@ -448,7 +448,7 @@ if __name__ == "__main__":
 
     xrange = [0.09, 1.1]
     yrange_a_type = "log"
-    yrange_a = [0.01, 8.0]
+    yrange_a = [0.0001, 8.0]
     yrange_b = [-1.5, 50.0]
     yrange_s = [0.0, 1.5]
     xticks = [0.09, 0.1, 0.12, 0.15, 0.2, 0.25, 0.3,
@@ -489,6 +489,18 @@ if __name__ == "__main__":
     if show_rv:
         ax[3].set_ylim(-5.0, 5.0)
 
+    # plot components
+    comps = copy.deepcopy(fitted_models[0])
+    modx = np.logspace(np.log10(0.001), np.log10(1000.0), 1000) * u.micron
+    amps = ["BKG", "FUV", "bump", "iss1", "iss2", "iss3", "sil1", "sil2", "FIR"]
+    for camp in amps:
+        print(camp)
+        setattr(comps, f"{camp}_amp", 0.0)
+    for camp in amps:
+        setattr(comps, f"{camp}_amp", getattr(fitted_models[0], f"{camp}_amp"))
+        ax[0].plot(modx, comps(modx), "k-", alpha=0.5)
+        setattr(comps, f"{camp}_amp", 0.0)
+
     leg_loc = "upper center"
     labels = ["GCC09", "All", "F19", "D22", "G21"]
     label_colors = [gor09_color, aiue_color, fit19_color, dec22_color, gor21_color]
@@ -519,9 +531,9 @@ if __name__ == "__main__":
         inst="SpeXLXD",
     )
     gor21_res = plot_irv_ssamp(ax, gor21_irs, "G21", color=gor21_color)
-    xrange = [0.09, 35.0]
+    xrange = [0.001, 1000.0]
     yrange_a_type = "log"
-    yrange_a = [0.015, 20.0]
+    yrange_a = [0.001, 20.0]
     yrange_b_type = "symlog"
     yrange_b = [-2.0, 50.0]
     yrange_s_type = "log"

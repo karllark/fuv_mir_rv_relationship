@@ -1336,9 +1336,9 @@ class G25(BaseExtModel, Fittable1DModel):
     FUV_b = Parameter(description="FUV term: b coefficient", default=4.0)
     FUV_n = Parameter(description="FUV term: n coefficient", default=6.5)
 
-    B3 = Parameter(description="bump: amplitude", default=3.23, bounds=(-1.0, 6.0))
-    xo = Parameter(description="bump: centroid", default=4.59, bounds=(4.5, 4.9))
-    gamma = Parameter(description="bump: width", default=0.95, bounds=(0.6, 1.7))
+    bump_amp = Parameter(description="bump: amplitude", default=3.23, bounds=(-1.0, 6.0))
+    bump_center = Parameter(description="bump: centroid", default=4.59, bounds=(4.5, 4.9))
+    bump_fwhm = Parameter(description="bump: width", default=0.95, bounds=(0.6, 1.7))
 
     iss1_amp = Parameter(
         description="ISS1: amplitude", default=0.03893, bounds=(0.001, 1.0), fixed=False
@@ -1449,9 +1449,9 @@ class G25(BaseExtModel, Fittable1DModel):
         FUV_lambda,
         FUV_b,
         FUV_n,
-        B3,
-        xo,
-        gamma,
+        bump_amp,
+        bump_center,
+        bump_fwhm,
         iss1_amp,
         iss1_center,
         iss1_fwhm,
@@ -1500,7 +1500,7 @@ class G25(BaseExtModel, Fittable1DModel):
         axav = (
             self._p92_single_term(lam, BKG_amp, BKG_lambda, BKG_b, BKG_n)
             + self._p92_single_term(lam, FUV_amp, FUV_lambda, FUV_b, FUV_n)
-            + _modified_drude(x, B3, xo, gamma, 0.0)
+            + _modified_drude(x, bump_amp, bump_center, bump_fwhm, 0.0)
             + _modified_drude(x, iss1_amp, iss1_center, iss1_fwhm, 0.0)
             + _modified_drude(x, iss2_amp, iss2_center, iss2_fwhm, 0.0)
             + _modified_drude(x, iss3_amp, iss3_center, iss3_fwhm, 0.0)
