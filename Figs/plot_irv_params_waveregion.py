@@ -63,8 +63,8 @@ def plot_irv_ssamp(
 
     # set to NAN so they are not plotted
     bvals = itab["npts"] == 0
-    itab["slopes"][bvals] = np.NAN
-    itab["intercepts"][bvals] = np.NAN
+    itab["slopes"][bvals] = np.nan
+    itab["intercepts"][bvals] = np.nan
     gvals = itab["npts"] >= 0
     if simpfit:
         for k, cname in enumerate(["intercepts", "slopes", "rmss"]):
@@ -77,8 +77,8 @@ def plot_irv_ssamp(
             )
 
     if "lmslopes" in itab.colnames:
-        itab["lmslopes"][bvals] = np.NAN
-        itab["lmintercepts"][bvals] = np.NAN
+        itab["lmslopes"][bvals] = np.nan
+        itab["lmintercepts"][bvals] = np.nan
 
         if "lmslopes_std" not in itab.colnames:
             itab["lmslopes_std"] = itab["lmslopes"] * 0.0
@@ -111,8 +111,8 @@ def plot_irv_ssamp(
         )
 
     if "d2slopes" in itab.colnames:
-        itab["d2slopes"][bvals] = np.NAN
-        itab["d2intercepts"][bvals] = np.NAN
+        itab["d2slopes"][bvals] = np.nan
+        itab["d2intercepts"][bvals] = np.nan
 
         if "d2slopes_std" not in itab.colnames:
             itab["d2slopes_std"] = itab["d2slopes"] * 0.0
@@ -136,9 +136,9 @@ def plot_irv_ssamp(
             )
 
         # cubic fits
-        # itab["d2curves_quad"][bvals] = np.NAN
-        # itab["d2slopes_quad"][bvals] = np.NAN
-        # itab["d2intercepts_quad"][bvals] = np.NAN
+        # itab["d2curves_quad"][bvals] = np.nan
+        # itab["d2slopes_quad"][bvals] = np.nan
+        # itab["d2intercepts_quad"][bvals] = np.nan
         # itab["d2curves_quad_std"] = itab["d2curves_quad"] * 0.1
         # itab["d2slopes_quad_std"] = itab["d2slopes_quad"] * 0.1
         # itab["d2intercepts_quad_std"] = itab["d2intercepts_quad"] * 0.1
@@ -160,8 +160,8 @@ def plot_irv_ssamp(
         #     )
 
         # likelihood ratios
-        # itab["d2lnlikes"][bvals] = np.NAN
-        # itab["d2lnlikes_quad"][bvals] = np.NAN
+        # itab["d2lnlikes"][bvals] = np.nan
+        # itab["d2lnlikes_quad"][bvals] = np.nan
         # lnratio = itab["d2lnlikes_quad"][gvals] - itab["d2lnlikes"][gvals]
         # ax[4].plot(
         #     itab["waves"][gvals],
@@ -182,8 +182,8 @@ def plot_irv_ssamp(
         )
 
     if "mcslopes" in itab.colnames:
-        itab["mcslopes"][bvals] = np.NAN
-        itab["mcintercepts"][bvals] = np.NAN
+        itab["mcslopes"][bvals] = np.nan
+        itab["mcintercepts"][bvals] = np.nan
         for k, cname in enumerate(["mcintercepts", "mcslopes"]):
             ax[k * 2].plot(
                 itab["waves"][gvals],
@@ -201,10 +201,10 @@ def plot_irv_ssamp(
                 alpha=0.25,
             )
     if "hfslopes" in itab.colnames:
-        itab["hfslopes"][bvals] = np.NAN
-        itab["hfintercepts"][bvals] = np.NAN
-        itab["hfsigmas"][bvals] = np.NAN
-        itab["hfrmss"][bvals] = np.NAN
+        itab["hfslopes"][bvals] = np.nan
+        itab["hfintercepts"][bvals] = np.nan
+        itab["hfsigmas"][bvals] = np.nan
+        itab["hfrmss"][bvals] = np.nan
         # for k, cname in enumerate(["hfintercepts", "hfslopes", "hfsigmas"]):
         for k, cname in enumerate(["hfintercepts", "hfslopes"]):
             ax[k * 2].plot(
@@ -232,7 +232,7 @@ def plot_resid(ax, data, dindx, model, color):
     Plot the residuals to the model
     """
     bvals = data[0] <= 0
-    data[dindx][bvals] = np.NAN
+    data[dindx][bvals] = np.nan
 
     # only plot where the model is valid
     gvals = (data[1].value >= 1.0 / model.x_range[1]) & (
