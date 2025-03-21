@@ -31,28 +31,22 @@ class ExtData(ExtDataStock):
             spec_dict["E44MIN55"],
             max(spec_dict["EXTCURV_RAW_SIG"][sindxs[0]], 0.02)
         )
+        print("E4455", self.columns["EBV"])
 
-        print(self.columns["EBV"])
-
+        # updated Mar 2025 to use the 4455 extinction directly
+        # previously used RAW, not quite normalized at V band (off by a very small amount)
         (indxs,) = np.where(1.0 / spec_dict["XVALS"] < 1.0)
         self.waves["STIS"] = (1.0 / spec_dict["XVALS"][indxs]) * u.micron
-        self.exts["STIS"] = spec_dict["EXTCURV_RAW"][indxs]
+        self.exts["STIS"] = spec_dict["EXTCURV_4455"][indxs] * self.columns["EBV"][0]
         self.npts["STIS"] = np.full((len(indxs)), 1)
-        self.uncs["STIS"] = spec_dict["EXTCURV_RAW_SIG"][indxs]
-
-        # print(self.columns["EBV"])
-        # plt.plot(self.waves["STIS"], self.exts["STIS"], label="raw")
-        # plt.plot(self.waves["STIS"], spec_dict["EXTCURV_4455"][indxs])
-        # plt.legend()
-        # plt.show()
+        self.uncs["STIS"] = spec_dict["EXTCURV_4455_SIG"][indxs] * self.columns["EBV"][0]
 
         (indxs,) = np.where(1.0 / spec_dict["XVALS"] > 1.0)
         self.waves["BAND"] = (1.0 / spec_dict["XVALS"][indxs]) * u.micron
-        self.exts["BAND"] = spec_dict["EXTCURV_RAW"][indxs]
+        self.exts["BAND"] = spec_dict["EXTCURV_4455"][indxs] * self.columns["EBV"][0]
         self.npts["BAND"] = np.full((len(indxs)), 1)
-        self.uncs["BAND"] = spec_dict["EXTCURV_RAW_SIG"][indxs]
+        self.uncs["BAND"] = spec_dict["EXTCURV_4455_SIG"][indxs] * self.columns["EBV"][0]
         self.names["BAND"] = ["JohnJ", "JohnH", "JohnK"]
-
 
 if __name__ == "__main__":
 
@@ -61,6 +55,7 @@ if __name__ == "__main__":
     files = glob.glob(f"{fpath}*.save")
 
     for ifile in files:
+        print(ifile)
 
         ext = ExtData()
         ext.read_ext_data_idlsave(ifile)
@@ -72,7 +67,8 @@ if __name__ == "__main__":
             ext.calc_RV()
 
             rv, rv_unc = ext.columns["RV"]
-            print(ext.columns["AV"], rv, rv_unc)
+            print("A55", ext.columns["AV"])
+            print("R55", rv, rv_unc)
             # exit()
 
             ext.type = "elx"

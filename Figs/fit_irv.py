@@ -6,7 +6,7 @@ import numpy as np
 from astropy.modeling import models, fitting
 from astropy.table import QTable
 
-import linmix
+# import linmix
 
 # from astropy.stats import sigma_clip
 from hyperfit.linfit import LinFit as HFLinFit
@@ -441,7 +441,7 @@ if __name__ == "__main__":
 
     hfemcee = False
     do_2dfit = True
-    do_2dfit_emcee = True
+    do_2dfit_emcee = False
     do_linmix = False
 
     if args.dataset == "G09":
