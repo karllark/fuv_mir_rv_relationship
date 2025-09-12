@@ -196,7 +196,7 @@ if __name__ == "__main__":
 
     leg = ax[0].get_legend()
     for k in range(4, 8):
-        leg.legendHandles[k].set_color("black")
+        leg.legend_handles[k].set_color("black")
 
     fig.tight_layout(w_pad=0.0, h_pad=0.0)
 
