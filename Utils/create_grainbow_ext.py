@@ -45,11 +45,13 @@ def rebin_ext(ctable, output_resolution):
         )  # * 1e-10  # put back factor for overflow errors
         full_rms[indxs] /= full_npts[indxs]
 
+    # division by 0.9854 is to fix an issue between the V band photometry and STIS data
+    # see G23 Renormalization in the dust_extinction readthedocs
     otable = QTable()
     otable["waves"] = full_wave
-    otable["d2intercepts"] = full_flux
-    otable["d2intercepts_std"] = full_unc
-    otable["d2rmss"] = full_rms
+    otable["d2intercepts"] = full_flux / 0.9854
+    otable["d2intercepts_std"] = full_unc / 0.9854
+    otable["d2rmss"] = full_rms / 0.9854
 
     return otable
 
@@ -80,14 +82,27 @@ if __name__ == "__main__":
 
         delt = np.diff(itab["waves"])
         awave = 0.5 * (itab["waves"][0:-1] + itab["waves"][1:])
-        print(corig,np.average(awave / delt), len(itab["waves"]))
+        # print(corig,np.average(awave / delt), len(itab["waves"]))
 
         gvals  = itab["d2intercepts_std"] > 0.0
+        if corig == "FUSE":
+            gvals2 = itab["waves"].value > 0.0915
+            gvals = gvals * gvals2
+        if corig == "IUE":
+            gvals2 = np.absolute(itab["waves"].value - 0.1216) > 0.0026
+            gvals3 = np.absolute(itab["waves"].value - 0.1539) > 0.0024
+            gvals4 = np.absolute(itab["waves"].value - 0.1389) > 0.0019
+            gvals = gvals * gvals2 * gvals3 * gvals4
+
         allwaves.append(itab["waves"][gvals])
         allexts.append(itab["d2intercepts"][gvals])
         alluncs.append(itab["d2intercepts_std"][gvals])
         allrmss.append(itab["d2rmss"][gvals])
         allorig.append([corig] * len(allwaves[-1]))
+
+        # add a floor of 1% uncertainties to deal with *tiny* uncs in the optical
+        gvals = (alluncs[-1] / allexts[-1]) < 0.01
+        alluncs[-1][gvals] = 0.01 * allexts[-1][gvals]
 
     otab = QTable()
     otab["wave"] = np.concatenate(allwaves)
