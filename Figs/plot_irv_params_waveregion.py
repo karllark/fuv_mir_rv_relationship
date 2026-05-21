@@ -497,7 +497,7 @@ if __name__ == "__main__":
         )
 
         # plotting the components
-        modx = np.linspace(0.09, 0.33, 100) * u.micron
+        modx = np.linspace(0.0912, 0.33, 100) * u.micron
         tmodel = copy.deepcopy(fitted_models[0])
         tmodel.C3 = 0.0
         tmodel.C4 = 0.0

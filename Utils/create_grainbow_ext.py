@@ -74,6 +74,10 @@ if __name__ == "__main__":
     for cfile, corig in zip(files, origins):
         itab = QTable.read(f"results/{cfile}")
 
+        if corig == "STIS/Opt":
+            gvals = itab["waves"].value > 0.30
+            itab = itab[gvals]
+
         # determine average resolution
         delt = np.diff(itab["waves"])
         awave = 0.5 * (itab["waves"][0:-1] + itab["waves"][1:])
