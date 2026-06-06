@@ -179,6 +179,7 @@ def plot_irv_ssamp(
             itab["d2slopes"],
             itab["d2intercepts_std"],
             itab["d2slopes_std"],
+            itab["d2rmss"],
         )
 
     if "mcslopes" in itab.colnames:
@@ -274,6 +275,7 @@ def plot_wavereg(ax, models, datasets, colors, wrange, no_weights=False):
         intercepts.append(cdata[2])
         slopes.append(cdata[3])
         intercepts_unc.append(cdata[4])
+        #intercepts_unc.append(cdata[6])
         slopes_unc.append(cdata[5])
     all_npts = np.concatenate(npts)
     all_waves = np.concatenate(waves)
@@ -495,7 +497,7 @@ if __name__ == "__main__":
         )
 
         # plotting the components
-        modx = np.linspace(0.09, 0.33, 100) * u.micron
+        modx = np.linspace(0.0912, 0.33, 100) * u.micron
         tmodel = copy.deepcopy(fitted_models[0])
         tmodel.C3 = 0.0
         tmodel.C4 = 0.0

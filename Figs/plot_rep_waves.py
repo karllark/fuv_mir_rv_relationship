@@ -16,7 +16,7 @@ from astropy.table import Table
 
 # from astropy.stats import sigma_clip
 
-import linmix
+# import linmix
 
 from hyperfit.linfit import LinFit as HFLinFit
 
@@ -94,7 +94,7 @@ def cov_ellipse(x, y, cov, num_sigma=1, **kwargs):
     # generate corners
     num_corners = 64
     angles = np.linspace(0, 2 * np.pi, num_corners, endpoint=False)
-    corners = np.row_stack([position + vw * cos(a) + vh * sin(a) for a in angles])
+    corners = np.vstack([position + vw * cos(a) + vh * sin(a) for a in angles])
 
     return Polygon(corners, **kwargs)
 

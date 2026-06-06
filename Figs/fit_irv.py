@@ -6,7 +6,7 @@ import numpy as np
 from astropy.modeling import models, fitting
 from astropy.table import QTable
 
-import linmix
+# import linmix
 
 # from astropy.stats import sigma_clip
 from hyperfit.linfit import LinFit as HFLinFit
@@ -243,6 +243,12 @@ def fit_allwaves(
                     d2slopes_unc[k] = np.std(samples[:, 0])
                     d2intercepts[k] = np.mean(samples[:, 1])
                     d2intercepts_unc[k] = np.std(samples[:, 1])
+
+                    # determine the scatter in the mean around the line
+                    d2rmss[k] = np.sqrt(
+                        np.sum(np.square(yvals[gvals] - fit2d_line(xvals[gvals])))
+                        / (npts[k] - 1)
+                    )
 
                     # print(intercepts[k], d2intercepts[k], d2intercepts_unc[k])
                     # print(slopes[k], d2slopes[k], d2slopes_unc[k])
